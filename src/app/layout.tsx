@@ -1,9 +1,11 @@
 import "@/styles/globals.css";
-
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
-
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { TRPCReactProvider } from "@/trpc/react";
+import { Navbar } from "./_components/navbar";
+import { projects } from "@/lib/data";
+import { ProjectCard } from "./_components/idea-card";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -22,7 +24,21 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable}`}>
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider>
+          <NuqsAdapter>
+            <div className="min-h-screen bg-gray-50">
+              <Navbar />
+              <main className="container mx-auto px-4 py-8">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {projects.map((project) => (
+                    <ProjectCard key={project.id} project={project} />
+                  ))}
+                  {children}
+                </div>
+              </main>
+            </div>
+          </NuqsAdapter>
+        </TRPCReactProvider>
       </body>
     </html>
   );

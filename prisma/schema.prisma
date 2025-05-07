@@ -11,12 +11,26 @@ datasource db {
 }
 
 model Post {
+  id            Int             @id @default(autoincrement())
+  title         String
+  description   String
+  imageUrl      String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  PostResources PostResources[]
+}
+
+model PostResources {
   id        Int      @id @default(autoincrement())
-  name      String
+  postId    Int
+  title     String
+  url       String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([name])
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
 }
 
 model User {

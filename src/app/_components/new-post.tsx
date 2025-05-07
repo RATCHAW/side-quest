@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
+import { useFieldArray, useForm } from "react-hook-form";
+import { type z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
@@ -25,31 +25,33 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { postSchema } from "@/validation/post";
+import { api } from "@/trpc/react";
 
-// Define form schema
-const formSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().min(1, "Description is required"),
-  resources: z.array(
-    z.object({
-      title: z.string(),
-      url: z.string().url("Please enter a valid URL").or(z.string().length(0)),
-    }),
-  ),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof postSchema>;
 
 export function NewPostDialog() {
   const [open, setOpen] = useState(false);
 
-  // Setup form with React Hook Form and zod validation
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(postSchema),
     defaultValues: {
       title: "",
       description: "",
       resources: [],
+    },
+  });
+
+  const { fields, append, prepend, remove, swap, move, insert } = useFieldArray(
+    {
+      control: form.control, // control props comes from useForm (optional: if you are using FormProvider)
+      name: "resources", // unique name for your Field Array
+    },
+  );
+
+  const createPost = api.post.create.useMutation({
+    onSuccess: async () => {
+      setOpen(false);
     },
   });
 
@@ -61,10 +63,8 @@ export function NewPostDialog() {
     maxSize,
   });
 
-  // Form submission handler
   function onSubmit(values: FormValues) {
-    console.log("Form data:", values);
-    setOpen(false);
+    createPost.mutate(values);
   }
 
   return (
@@ -114,34 +114,27 @@ export function NewPostDialog() {
               )}
             />
 
-            {/* Resources section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold">Resources</h4>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    const currentResources = form.getValues("resources") || [];
-                    form.setValue("resources", [
-                      ...currentResources,
-                      { title: "", url: "" },
-                    ]);
-                  }}
+                  onClick={() => append({ title: "", url: "" })}
                 >
                   + Add Resource
                 </Button>
               </div>
 
-              {form.watch("resources")?.length === 0 && (
+              {fields.length === 0 && (
                 <p className="text-sm text-gray-500">
                   Add links to helpful resources like APIs, tutorials, or design
                   inspiration
                 </p>
               )}
 
-              {form.watch("resources")?.map((_, index) => (
-                <div key={index} className="flex items-center gap-2">
+              {fields.map((field, index) => (
+                <div key={field.id} className="flex items-center gap-2">
                   <FormField
                     control={form.control}
                     name={`resources.${index}.title`}
@@ -171,13 +164,7 @@ export function NewPostDialog() {
                   <Button
                     variant="ghost"
                     type="button"
-                    onClick={() => {
-                      const currentResources = form.getValues("resources");
-                      form.setValue(
-                        "resources",
-                        currentResources.filter((_, i) => i !== index),
-                      );
-                    }}
+                    onClick={() => remove(index)}
                     className="self-start text-red-500"
                   >
                     <X />

@@ -31,6 +31,56 @@ export const postRouter = createTRPCRouter({
       };
     }),
 
+  getById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const post = await ctx.db.post.findUnique({
+        where: {
+          id: input.id,
+        },
+        include: {
+          _count: {
+            select: {
+              votes: {
+                where: {
+                  voteType: "UP",
+                },
+              },
+              comments: true,
+            },
+          },
+          user: {
+            select: {
+              name: true,
+            },
+          },
+          comments: {
+            include: {
+              parentComment: true,
+            },
+          },
+          bookmarks: {
+            where: {
+              userId: ctx.sesssion?.user.id,
+            },
+          },
+          resources: true,
+          votes: {
+            where: {
+              userId: ctx.sesssion?.user.id,
+            },
+          },
+        },
+      });
+      if (!post) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Post with id '${input.id}' not found`,
+        });
+      }
+      return post;
+    }),
+
   all: publicProcedure.query(async ({ ctx }) => {
     const posts = await ctx.db.post.findMany({
       include: {

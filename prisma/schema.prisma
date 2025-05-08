@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Post {
-  id          Int             @id @default(autoincrement())
+  id          String          @id @default(cuid())
   title       String
   description String
   imageUrl    String?
@@ -26,9 +26,9 @@ model Post {
 }
 
 model PostVote {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   voteType  Vote
-  postId    Int
+  postId    String
   userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -41,8 +41,8 @@ model PostVote {
 }
 
 model PostBookmark {
-  id        Int      @id @default(autoincrement())
-  postId    Int
+  id        String   @id @default(cuid())
+  postId    String
   userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -55,13 +55,13 @@ model PostBookmark {
 }
 
 model PostComment {
-  id              Int      @id @default(autoincrement())
-  postId          Int
+  id              String   @id @default(cuid())
+  postId          String
   userId          String
   content         String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  parentCommentId Int?
+  parentCommentId String?
 
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   post          Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -73,8 +73,8 @@ model PostComment {
 }
 
 model PostResources {
-  id        Int      @id @default(autoincrement())
-  postId    Int
+  id        String   @id @default(cuid())
+  postId    String
   title     String
   url       String
   createdAt DateTime @default(now())

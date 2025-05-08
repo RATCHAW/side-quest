@@ -11,13 +11,65 @@ datasource db {
 }
 
 model Post {
-  id            Int             @id @default(autoincrement())
-  title         String
-  description   String
-  imageUrl      String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  PostResources PostResources[]
+  id          Int             @id @default(autoincrement())
+  title       String
+  description String
+  imageUrl    String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resources   PostResources[]
+  votes       PostVote[]
+  bookmarks   PostBookmark[]
+  comments    PostComment[]
+}
+
+model PostVote {
+  id        Int      @id @default(autoincrement())
+  voteType  Vote
+  postId    Int
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+}
+
+model PostBookmark {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+}
+
+model PostComment {
+  id              Int      @id @default(autoincrement())
+  postId          Int
+  userId          String
+  content         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  parentCommentId Int?
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post          Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentComment PostComment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies       PostComment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([parentCommentId])
 }
 
 model PostResources {
@@ -34,7 +86,7 @@ model PostResources {
 }
 
 model User {
-  id            String    @id
+  id            String         @id
   name          String
   email         String
   emailVerified Boolean
@@ -43,6 +95,10 @@ model User {
   updatedAt     DateTime
   sessions      Session[]
   accounts      Account[]
+  Post          Post[]
+  PostComment   PostComment[]
+  PostVote      PostVote[]
+  PostBookmark  PostBookmark[]
 
   @@unique([email])
   @@map("user")
@@ -91,4 +147,9 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+enum Vote {
+  UP
+  DOWN
 }

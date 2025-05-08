@@ -4,8 +4,9 @@ import { Geist } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { TRPCReactProvider } from "@/trpc/react";
 import { Navbar } from "./_components/navbar";
-import { projects } from "@/lib/data";
-import { ProjectCard } from "./_components/idea-card";
+import { Toaster } from "@/components/ui/sonner";
+import { Suspense } from "react";
+import { Posts } from "./_components/posts";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -18,25 +19,26 @@ const geist = Geist({
   variable: "--font-geist-sans",
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable}`}>
+    <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <body>
         <TRPCReactProvider>
           <NuqsAdapter>
             <div className="min-h-screen bg-gray-50">
               <Navbar />
               <main className="container mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {projects.map((project) => (
-                    <ProjectCard key={project.id} project={project} />
-                  ))}
-                  {children}
-                </div>
+                <Suspense
+                  fallback={<div className="text-black">Loading...</div>}
+                >
+                  <Posts />
+                </Suspense>
+                {children}
               </main>
             </div>
+            <Toaster />
           </NuqsAdapter>
         </TRPCReactProvider>
       </body>

@@ -27,11 +27,14 @@ import {
 } from "@/components/ui/form";
 import { postSchema } from "@/validation/post";
 import { api } from "@/trpc/react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 type FormValues = z.infer<typeof postSchema>;
 
 export function NewPostDialog() {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(postSchema),
@@ -50,8 +53,19 @@ export function NewPostDialog() {
   );
 
   const createPost = api.post.create.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       setOpen(false);
+      toast("Idea has been created", {
+        action: {
+          label: "View",
+          onClick: () => router.push(`${data.id}`),
+        },
+      });
+    },
+    onError: (error) => {
+      if (error.data?.code === "UNAUTHORIZED") {
+        toast.error("You must be logged in to create a post");
+      }
     },
   });
 

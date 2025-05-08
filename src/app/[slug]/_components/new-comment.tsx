@@ -16,6 +16,7 @@ import {
 import { newPostCommentSchema, type NewPostComment } from "@/validation/post";
 import { api } from "@/trpc/react";
 import type { Post, PostComment } from "@prisma/client";
+import { authClient } from "@/lib/auth-client";
 
 export const NewComment = ({
   postId,
@@ -44,18 +45,19 @@ export const NewComment = ({
       parentId: parentId,
     });
   };
+  const { data } = authClient.useSession();
   return (
     <div className="flex gap-4">
       <Avatar>
         <AvatarImage
-          src="/placeholder.svg?height=40&width=40"
-          alt="Current User"
+          src={data?.user.image || undefined}
+          alt={data?.user.name}
         />
-        <AvatarFallback>U</AvatarFallback>
+        <AvatarFallback>{data?.user.name.charAt(0)}</AvatarFallback>
       </Avatar>
-      <div className="flex-1 space-y-2">
+      <div className="flex-1 items-end space-y-2">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
             <FormField
               control={form.control}
               name="content"

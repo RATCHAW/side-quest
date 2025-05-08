@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PostDialog } from "./_components/post-dialog";
 import { api } from "@/trpc/server";
 import { CommentSection } from "./comment-section";
+import { PostAction } from "../_components/post-actions";
 
 const IdeaPage = async ({ params }: { params: { slug: string } }) => {
   const post = await api.post.getById({ id: params.slug });
@@ -74,49 +75,7 @@ const IdeaPage = async ({ params }: { params: { slug: string } }) => {
           </div>
         )}
 
-        <div className="flex items-center justify-between border-t pt-4">
-          <div className="flex items-center space-x-2">
-            {/* <Button
-                                variant="outline"
-                                size="sm"
-                                className={userVote === "up" ? "text-green-500 border-green-500" : ""}
-                                onClick={() => handleVote("up")}
-                            >
-                                <ThumbsUp className="h-4 w-4 mr-1" />
-                                Upvote
-                            </Button> */}
-            {/* <Button
-                                variant="outline"
-                                size="sm"
-                                className={userVote === "down" ? "text-red-500 border-red-500" : ""}
-                                onClick={() => handleVote("down")}
-                            >
-                                <ThumbsDown className="h-4 w-4 mr-1" />
-                                Downvote
-                            </Button> */}
-          </div>
-          <div className="flex items-center space-x-2">
-            {/* <Button
-                                variant="outline"
-                                size="sm"
-                                className={bookmarked ? "text-blue-500 border-blue-500" : ""}
-                                onClick={() => setBookmarked(!bookmarked)}
-                            >
-                                <Bookmark className="h-4 w-4 mr-1" />
-                                {bookmarked ? "Bookmarked" : "Bookmark"}
-                            </Button> */}
-            {/* <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    navigator.clipboard.writeText(window.location.href + "?post=" + post.id);
-                                }}
-                            >
-                                <Share2 className="h-4 w-4 mr-1" />
-                                Share
-                            </Button> */}
-          </div>
-        </div>
+        <PostAction post={post} />
       </div>
 
       <CommentSection comments={post.comments} postId={post.id} />

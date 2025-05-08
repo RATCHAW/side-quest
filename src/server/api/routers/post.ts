@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { newPostSchema } from "@/validation/post";
 import { TRPCError, type inferRouterOutputs } from "@trpc/server";
-import { Prisma } from "@prisma/client";
+import { Prisma, Vote } from "@prisma/client";
 
 export const postRouter = createTRPCRouter({
   hello: publicProcedure
@@ -138,13 +138,62 @@ export const postRouter = createTRPCRouter({
       });
     }),
 
-  getLatest: publicProcedure.query(async ({ ctx }) => {
-    const post = await ctx.db.post.findFirst({
-      orderBy: { createdAt: "desc" },
-    });
-
-    return post ?? null;
-  }),
+  vote: publicProcedure
+    .input(z.object({ postId: z.string(), voteType: z.nativeEnum(Vote) }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.sesssion?.user.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to vote on a post",
+        });
+      }
+      return ctx.db.postVote.upsert({
+        where: {
+          postId_userId: {
+            userId: ctx.sesssion.user.id,
+            postId: input.postId,
+          },
+        },
+        create: {
+          userId: ctx.sesssion.user.id,
+          postId: input.postId,
+          voteType: input.voteType,
+        },
+        update: {
+          voteType: input.voteType,
+        },
+      });
+    }),
+  bookmark: publicProcedure
+    .input(
+      z.object({ postId: z.string(), actionType: z.enum(["ADD", "REMOVE"]) }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.sesssion?.user.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to bookmark a post",
+        });
+      }
+      if (input.actionType === "ADD") {
+        return ctx.db.postBookmark.create({
+          data: {
+            userId: ctx.sesssion.user.id,
+            postId: input.postId,
+          },
+        });
+      }
+      if (input.actionType === "REMOVE") {
+        return ctx.db.postBookmark.delete({
+          where: {
+            postId_userId: {
+              userId: ctx.sesssion.user.id,
+              postId: input.postId,
+            },
+          },
+        });
+      }
+    }),
 });
 
 type PostRouterOutput = inferRouterOutputs<typeof postRouter>;

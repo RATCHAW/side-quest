@@ -21,7 +21,7 @@ export function CommentSection({ comments, postId }: CommentSectionProps) {
           <div key={comment.id} className="flex gap-4">
             <Avatar>
               <AvatarImage
-                src={comment.user.image || "/placeholder.svg"}
+                src={comment.user.image || undefined}
                 alt={comment.user.name}
               />
               <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>

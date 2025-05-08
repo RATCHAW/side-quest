@@ -45,12 +45,10 @@ export function NewPostDialog() {
     },
   });
 
-  const { fields, append, prepend, remove, swap, move, insert } = useFieldArray(
-    {
-      control: form.control, // control props comes from useForm (optional: if you are using FormProvider)
-      name: "resources", // unique name for your Field Array
-    },
-  );
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "resources",
+  });
 
   const createPost = api.post.create.useMutation({
     onSuccess: async (data) => {

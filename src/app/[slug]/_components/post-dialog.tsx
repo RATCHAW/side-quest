@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { redirect } from "next/navigation";
 
 export function PostDialog({ children }: { children: React.ReactNode }) {
   const router = useRouter();

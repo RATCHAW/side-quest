@@ -25,19 +25,19 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { postSchema } from "@/validation/post";
+import { newPostSchema } from "@/validation/post";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-type FormValues = z.infer<typeof postSchema>;
+type FormValues = z.infer<typeof newPostSchema>;
 
 export function NewPostDialog() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(postSchema),
+    resolver: zodResolver(newPostSchema),
     defaultValues: {
       title: "",
       description: "",

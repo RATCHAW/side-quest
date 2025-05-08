@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PostDialog } from "./_components/post-dialog";
 import { api } from "@/trpc/server";
+import { CommentSection } from "./comment-section";
 
 const IdeaPage = async ({ params }: { params: { slug: string } }) => {
   const post = await api.post.getById({ id: params.slug });
@@ -31,7 +32,7 @@ const IdeaPage = async ({ params }: { params: { slug: string } }) => {
         <DialogDescription className="flex items-center gap-2 text-sm">
           <Avatar className="h-6 w-6">
             <AvatarImage
-              src="/placeholder.svg?height=24&width=24"
+              src={post.user.image || undefined}
               alt={post.user.name}
             />
             <AvatarFallback>{post.user.name.charAt(0)}</AvatarFallback>
@@ -118,7 +119,7 @@ const IdeaPage = async ({ params }: { params: { slug: string } }) => {
         </div>
       </div>
 
-      {/* <CommentSection comments={post.comments} projectId={post.id} /> */}
+      <CommentSection comments={post.comments} postId={post.id} />
     </PostDialog>
   );
 };

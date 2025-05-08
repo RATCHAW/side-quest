@@ -1,26 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
-import { postSchema } from "@/validation/post";
-import { TRPCError } from "@trpc/server";
+import { newPostSchema } from "@/validation/post";
+import { TRPCError, type inferRouterOutputs } from "@trpc/server";
 import { Prisma } from "@prisma/client";
-
-export const postWithActionsInclude =
-  Prisma.validator<Prisma.PostFindManyArgs>()({
-    include: {
-      _count: {
-        select: {
-          votes: true,
-          comments: true,
-        },
-      },
-      bookmarks: true,
-      votes: true,
-    },
-  });
-
-export type PostWithActions = Prisma.PostGetPayload<
-  typeof postWithActionsInclude
->;
 
 export const postRouter = createTRPCRouter({
   hello: publicProcedure
@@ -52,11 +34,34 @@ export const postRouter = createTRPCRouter({
           user: {
             select: {
               name: true,
+              image: true,
             },
           },
           comments: {
             include: {
-              parentComment: true,
+              user: {
+                select: {
+                  name: true,
+                  image: true,
+                },
+              },
+              replies: {
+                include: {
+                  user: {
+                    select: {
+                      name: true,
+                      image: true,
+                    },
+                  },
+                },
+              },
+              parentComment: {
+                select: {
+                  id: true,
+                  content: true,
+                  createdAt: true,
+                },
+              },
             },
           },
           bookmarks: {
@@ -110,26 +115,28 @@ export const postRouter = createTRPCRouter({
     return posts;
   }),
 
-  create: publicProcedure.input(postSchema).mutation(async ({ ctx, input }) => {
-    if (!ctx.sesssion?.user.id) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "You must be logged in to create a post",
-      });
-    }
-    return ctx.db.post.create({
-      data: {
-        title: input.title,
-        description: input.description,
-        userId: ctx.sesssion.user.id,
-        resources: {
-          createMany: {
-            data: input.resources,
+  create: publicProcedure
+    .input(newPostSchema)
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.sesssion?.user.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to create a post",
+        });
+      }
+      return ctx.db.post.create({
+        data: {
+          title: input.title,
+          description: input.description,
+          userId: ctx.sesssion.user.id,
+          resources: {
+            createMany: {
+              data: input.resources,
+            },
           },
         },
-      },
-    });
-  }),
+      });
+    }),
 
   getLatest: publicProcedure.query(async ({ ctx }) => {
     const post = await ctx.db.post.findFirst({
@@ -139,3 +146,8 @@ export const postRouter = createTRPCRouter({
     return post ?? null;
   }),
 });
+
+type PostRouterOutput = inferRouterOutputs<typeof postRouter>;
+
+export type PostsWithActions = PostRouterOutput["all"];
+export type PostWithDetails = PostRouterOutput["getById"];

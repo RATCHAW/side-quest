@@ -11,10 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Link from "next/link";
-import type { PostWithActions } from "@/server/api/routers/post";
+import type { PostsWithActions } from "@/server/api/routers/post";
 
 interface PostCardProps {
-  post: PostWithActions;
+  post: PostsWithActions[number];
 }
 
 export function PostCard({ post }: PostCardProps) {

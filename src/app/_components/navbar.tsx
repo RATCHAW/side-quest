@@ -5,11 +5,14 @@ import { Input } from "@/components/ui/input";
 import { ProfileDropdown } from "./profile-dropdown";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import { useQueryState } from "nuqs";
 import { NewPostDialog } from "./new-post";
-
+import { useQueryState } from "nuqs";
 export function Navbar() {
-  const [q, setQ] = useQueryState("q", { defaultValue: "" });
+  const [q, setQ] = useQueryState("q", {
+    defaultValue: "",
+    shallow: false,
+    throttleMs: 500,
+  });
 
   const signIn = async () => {
     await authClient.signIn.social({

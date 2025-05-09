@@ -1,20 +1,20 @@
-"use client";
-
 import Image from "next/image";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Link from "next/link";
 import type { PostsWithActions } from "@/server/api/routers/post";
 import { PostAction } from "./post-actions";
+import { loadSearchParams } from "./searchparams";
 
 interface PostCardProps {
   post: PostsWithActions[number];
+  query?: string;
 }
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, query }: PostCardProps) {
   return (
     <div>
       <Card className="flex h-full flex-col transition-shadow hover:shadow-md">
-        <Link href={`/${post.id}`}>
+        <Link href={`/?p=${post.id}${query ? `&q=${query}` : ""}`}>
           <div className="relative h-48 w-full">
             <Image
               src={post.imageUrl || "/placeholder.svg?height=200&width=400"}

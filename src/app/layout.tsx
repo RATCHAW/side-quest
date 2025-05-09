@@ -5,8 +5,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { TRPCReactProvider } from "@/trpc/react";
 import { Navbar } from "./_components/navbar";
 import { Toaster } from "@/components/ui/sonner";
-import { Suspense } from "react";
-import { Posts } from "./_components/posts";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -29,17 +28,11 @@ export default async function RootLayout({
           <NuqsAdapter>
             <div className="min-h-screen bg-gray-50">
               <Navbar />
-              <main className="container mx-auto px-4 py-8">
-                <Suspense
-                  fallback={<div className="text-black">Loading...</div>}
-                >
-                  <Posts />
-                </Suspense>
-                {children}
-              </main>
+              <main className="container mx-auto px-4 py-8">{children}</main>
             </div>
             <Toaster />
           </NuqsAdapter>
+          <ReactQueryDevtools />
         </TRPCReactProvider>
       </body>
     </html>

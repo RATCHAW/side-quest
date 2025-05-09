@@ -86,34 +86,45 @@ export const postRouter = createTRPCRouter({
       return post;
     }),
 
-  all: publicProcedure.query(async ({ ctx }) => {
-    const posts = await ctx.db.post.findMany({
-      include: {
-        _count: {
-          select: {
-            votes: {
-              where: {
-                voteType: "UP",
+  all: publicProcedure
+    .input(
+      z.object({
+        q: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const posts = await ctx.db.post.findMany({
+        where: {
+          title: {
+            contains: input.q,
+          },
+        },
+        include: {
+          _count: {
+            select: {
+              votes: {
+                where: {
+                  voteType: "UP",
+                },
               },
+              comments: true,
             },
-            comments: true,
           },
-        },
 
-        bookmarks: {
-          where: {
-            userId: ctx.sesssion?.user.id,
+          bookmarks: {
+            where: {
+              userId: ctx.sesssion?.user.id,
+            },
+          },
+          votes: {
+            where: {
+              userId: ctx.sesssion?.user.id,
+            },
           },
         },
-        votes: {
-          where: {
-            userId: ctx.sesssion?.user.id,
-          },
-        },
-      },
-    });
-    return posts;
-  }),
+      });
+      return posts;
+    }),
 
   create: publicProcedure
     .input(newPostSchema)

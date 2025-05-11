@@ -66,13 +66,13 @@ export const postRouter = createTRPCRouter({
           },
           bookmarks: {
             where: {
-              userId: ctx.sesssion?.user.id,
+              userId: ctx.session?.user.id,
             },
           },
           resources: true,
           votes: {
             where: {
-              userId: ctx.sesssion?.user.id,
+              userId: ctx.session?.user.id,
             },
           },
         },
@@ -113,12 +113,12 @@ export const postRouter = createTRPCRouter({
 
           bookmarks: {
             where: {
-              userId: ctx.sesssion?.user.id,
+              userId: ctx.session?.user.id,
             },
           },
           votes: {
             where: {
-              userId: ctx.sesssion?.user.id,
+              userId: ctx.session?.user.id,
             },
             select: {
               voteType: true,
@@ -132,7 +132,7 @@ export const postRouter = createTRPCRouter({
   create: publicProcedure
     .input(newPostSchema)
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.sesssion?.user.id) {
+      if (!ctx.session?.user.id) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "You must be logged in to create a post",
@@ -142,7 +142,7 @@ export const postRouter = createTRPCRouter({
         data: {
           title: input.title,
           description: input.description,
-          userId: ctx.sesssion.user.id,
+          userId: ctx.session.user.id,
           resources: {
             createMany: {
               data: input.resources,
@@ -160,7 +160,7 @@ export const postRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.sesssion?.user.id) {
+      if (!ctx.session?.user.id) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "You must be logged in to vote on a post",
@@ -170,7 +170,7 @@ export const postRouter = createTRPCRouter({
         await ctx.db.postVote.delete({
           where: {
             postId_userId: {
-              userId: ctx.sesssion.user.id,
+              userId: ctx.session.user.id,
               postId: input.postId,
             },
           },
@@ -182,12 +182,12 @@ export const postRouter = createTRPCRouter({
       return await ctx.db.postVote.upsert({
         where: {
           postId_userId: {
-            userId: ctx.sesssion.user.id,
+            userId: ctx.session.user.id,
             postId: input.postId,
           },
         },
         create: {
-          userId: ctx.sesssion.user.id,
+          userId: ctx.session.user.id,
           postId: input.postId,
           voteType: input.voteType,
         },
@@ -205,7 +205,7 @@ export const postRouter = createTRPCRouter({
       z.object({ postId: z.string(), actionType: z.enum(["ADD", "REMOVE"]) }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.sesssion?.user.id) {
+      if (!ctx.session?.user.id) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "You must be logged in to bookmark a post",
@@ -214,7 +214,7 @@ export const postRouter = createTRPCRouter({
       if (input.actionType === "ADD") {
         return await ctx.db.postBookmark.create({
           data: {
-            userId: ctx.sesssion.user.id,
+            userId: ctx.session.user.id,
             postId: input.postId,
           },
         });
@@ -223,7 +223,7 @@ export const postRouter = createTRPCRouter({
         return await ctx.db.postBookmark.delete({
           where: {
             postId_userId: {
-              userId: ctx.sesssion.user.id,
+              userId: ctx.session.user.id,
               postId: input.postId,
             },
           },

@@ -12,7 +12,7 @@ export const commentRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.sesssion?.user.id) {
+      if (!ctx.session?.user.id) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "You must be logged in to create a comment",
@@ -24,7 +24,7 @@ export const commentRouter = createTRPCRouter({
           content: input.content,
           postId: input.postId,
           parentCommentId: input.parentId,
-          userId: ctx.sesssion.user.id,
+          userId: ctx.session.user.id,
         },
       });
     }),

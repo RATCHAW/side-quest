@@ -1,13 +1,11 @@
-import { api } from "@/trpc/server";
-import { PostCard } from "./post-card";
+import { api, HydrateClient } from "@/trpc/server";
+import { PostsClient } from "./postsClient";
 
-export const Posts = async ({ query }: { query: string | undefined }) => {
-  const posts = await api.post.all({ q: query });
+export const Posts = async ({ q }: { q: string | null }) => {
+  await api.post.all.prefetch({ q: q ?? undefined });
   return (
-    <>
-      {posts.map((post) => (
-        <PostCard query={query} key={post.id} post={post} />
-      ))}
-    </>
+    <HydrateClient>
+      <PostsClient />
+    </HydrateClient>
   );
 };

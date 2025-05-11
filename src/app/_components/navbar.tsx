@@ -22,7 +22,7 @@ export function Navbar() {
 
   const { data } = authClient.useSession();
   return (
-    <header className="sticky top-0 z-10 border-b bg-white">
+    <header className="sticky top-0 z-10 border-b">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="text-xl font-bold">SideQuest</div>
         <div className="relative mx-4 w-full max-w-md">

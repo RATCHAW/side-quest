@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import type { PostsWithActions } from "@/server/api/routers/post";
 import { api } from "@/trpc/react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Bookmark,
   MessageSquare,
@@ -10,16 +11,53 @@ import {
   ThumbsDown,
   ThumbsUp,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
-  const voteType = post.votes[0]?.voteType;
+  const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  const search = searchParams.get("q");
+
+  const currentVote = post.votes[0]?.voteType;
 
   const vote = api.post.vote.useMutation({
     onError: (error) => {
       if (error.data?.code === "UNAUTHORIZED") {
         toast.error("You must be logged in to vote");
       }
+    },
+
+    onSuccess: (data) => {
+      queryClient.setQueryData(
+        [
+          ["post", "all"],
+          {
+            input: { q: search ?? undefined },
+            type: "query",
+          },
+        ],
+        (oldData: PostsWithActions) => {
+          if (!oldData) return oldData;
+          const newData = oldData.map((item) => {
+            if (item.id === post.id) {
+              return {
+                ...item,
+                _count: {
+                  ...item._count,
+                  votes:
+                    data.voteType === "DOWN" || data.voteType === undefined
+                      ? Math.max(0, item._count.votes - 1)
+                      : item._count.votes + 1,
+                },
+                votes: [data],
+              };
+            }
+            return item;
+          });
+          return newData;
+        },
+      );
     },
   });
 
@@ -28,6 +66,38 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
       if (error.data?.code === "UNAUTHORIZED") {
         toast.error("You must be logged in to bookmark");
       }
+    },
+    onMutate: () => {
+      queryClient.setQueryData(
+        [
+          ["post", "all"],
+          {
+            input: {},
+            type: "query",
+          },
+        ],
+        (oldData: PostsWithActions) => {
+          if (!oldData) return oldData;
+          const newData = oldData.map((item) => {
+            if (item.id === post.id) {
+              return {
+                ...item,
+                bookmarks: item.bookmarks[0]
+                  ? []
+                  : [
+                      {
+                        id: "",
+                        postId: post.id,
+                        userId: "",
+                      },
+                    ],
+              };
+            }
+            return item;
+          });
+          return newData;
+        },
+      );
     },
   });
 
@@ -39,8 +109,8 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
     }
   };
   const handleVote = (voteType: "UP" | "DOWN") => {
-    if (voteType === "UP") {
-      vote.mutate({ postId: post.id, voteType });
+    if (voteType === currentVote) {
+      vote.mutate({ postId: post.id, voteType: "REMOVE" });
     } else {
       vote.mutate({ postId: post.id, voteType });
     }
@@ -51,7 +121,7 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
         <Button
           variant="ghost"
           size="icon"
-          className={voteType === "UP" ? "text-green-500" : ""}
+          className={currentVote === "UP" ? "text-green-500" : ""}
           onClick={() => handleVote("UP")}
         >
           <ThumbsUp className="h-4 w-4" />
@@ -60,7 +130,7 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
         <Button
           variant="ghost"
           size="icon"
-          className={voteType === "DOWN" ? "text-red-500" : ""}
+          className={currentVote === "DOWN" ? "text-red-500" : ""}
           onClick={() => handleVote("DOWN")}
         >
           <ThumbsDown className="h-4 w-4" />

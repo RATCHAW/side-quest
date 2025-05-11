@@ -3,7 +3,6 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Link from "next/link";
 import type { PostsWithActions } from "@/server/api/routers/post";
 import { PostAction } from "./post-actions";
-import { loadSearchParams } from "./searchparams";
 
 interface PostCardProps {
   post: PostsWithActions[number];

@@ -120,6 +120,9 @@ export const postRouter = createTRPCRouter({
             where: {
               userId: ctx.sesssion?.user.id,
             },
+            select: {
+              voteType: true,
+            },
           },
         },
       });
@@ -150,7 +153,12 @@ export const postRouter = createTRPCRouter({
     }),
 
   vote: publicProcedure
-    .input(z.object({ postId: z.string(), voteType: z.nativeEnum(Vote) }))
+    .input(
+      z.object({
+        postId: z.string(),
+        voteType: z.enum(["UP", "DOWN", "REMOVE"]),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.sesssion?.user.id) {
         throw new TRPCError({
@@ -158,7 +166,20 @@ export const postRouter = createTRPCRouter({
           message: "You must be logged in to vote on a post",
         });
       }
-      return ctx.db.postVote.upsert({
+      if (input.voteType === "REMOVE") {
+        await ctx.db.postVote.delete({
+          where: {
+            postId_userId: {
+              userId: ctx.sesssion.user.id,
+              postId: input.postId,
+            },
+          },
+        });
+        return {
+          voteType: undefined,
+        };
+      }
+      return await ctx.db.postVote.upsert({
         where: {
           postId_userId: {
             userId: ctx.sesssion.user.id,
@@ -172,6 +193,10 @@ export const postRouter = createTRPCRouter({
         },
         update: {
           voteType: input.voteType,
+        },
+
+        select: {
+          voteType: true,
         },
       });
     }),
@@ -187,7 +212,7 @@ export const postRouter = createTRPCRouter({
         });
       }
       if (input.actionType === "ADD") {
-        return ctx.db.postBookmark.create({
+        return await ctx.db.postBookmark.create({
           data: {
             userId: ctx.sesssion.user.id,
             postId: input.postId,
@@ -195,7 +220,7 @@ export const postRouter = createTRPCRouter({
         });
       }
       if (input.actionType === "REMOVE") {
-        return ctx.db.postBookmark.delete({
+        return await ctx.db.postBookmark.delete({
           where: {
             postId_userId: {
               userId: ctx.sesssion.user.id,

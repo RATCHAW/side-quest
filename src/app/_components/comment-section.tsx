@@ -2,7 +2,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewComment } from "./new-comment";
 import type { Post } from "@prisma/client";
 import type { PostWithDetails } from "@/server/api/routers/post";
-import { NewCommentReply } from "./new-comment-reply";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";

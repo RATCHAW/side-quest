@@ -1,4 +1,4 @@
-import { loadSearchParams } from "./_components/searchparams";
+import { loadSearchParams } from "./_components/search-params";
 import { Posts } from "./_components/posts";
 import { Suspense } from "react";
 

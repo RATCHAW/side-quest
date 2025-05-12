@@ -4,13 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { PostsWithActions } from "@/server/api/routers/post";
 import { api } from "@/trpc/react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  Bookmark,
-  MessageSquare,
-  Share2,
-  ThumbsDown,
-  ThumbsUp,
-} from "lucide-react";
+import { Bookmark, MessageSquare, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -67,30 +61,22 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
         toast.error("You must be logged in to bookmark");
       }
     },
-    onMutate: () => {
+    onSuccess: (data, variables) => {
       queryClient.setQueryData(
         [
           ["post", "all"],
           {
-            input: {},
+            input: { q: search ?? undefined },
             type: "query",
           },
         ],
         (oldData: PostsWithActions) => {
           if (!oldData) return oldData;
           const newData = oldData.map((item) => {
-            if (item.id === post.id) {
+            if (item.id === variables.postId) {
               return {
                 ...item,
-                bookmarks: item.bookmarks[0]
-                  ? []
-                  : [
-                      {
-                        id: "",
-                        postId: post.id,
-                        userId: "",
-                      },
-                    ],
+                bookmarks: variables.actionType === "ADD" ? [data] : [],
               };
             }
             return item;
@@ -102,12 +88,16 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
   });
 
   const handleBookmark = () => {
-    if (post.bookmarks[0]) {
+    console.log(post.bookmarks);
+    if (post.bookmarks.length > 0) {
+      console.log("remove");
       bookmark.mutate({ postId: post.id, actionType: "REMOVE" });
     } else {
+      console.log("add");
       bookmark.mutate({ postId: post.id, actionType: "ADD" });
     }
   };
+
   const handleVote = (voteType: "UP" | "DOWN") => {
     if (voteType === currentVote) {
       vote.mutate({ postId: post.id, voteType: "REMOVE" });

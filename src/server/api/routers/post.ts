@@ -2,89 +2,77 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { newPostSchema } from "@/validation/post";
 import { TRPCError, type inferRouterOutputs } from "@trpc/server";
-import { Prisma, Vote } from "@prisma/client";
 
 export const postRouter = createTRPCRouter({
-  hello: publicProcedure
-    .input(z.object({ text: z.string() }))
-    .query(({ input }) => {
-      return {
-        greeting: `Hello ${input.text}`,
-      };
-    }),
-
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const post = await ctx.db.post.findUnique({
-        where: {
-          id: input.id,
+  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const post = await ctx.db.post.findUnique({
+      where: {
+        id: input.id,
+      },
+      include: {
+        _count: {
+          select: {
+            votes: {
+              where: {
+                voteType: "UP",
+              },
+            },
+            comments: true,
+          },
         },
-        include: {
-          _count: {
-            select: {
-              votes: {
-                where: {
-                  voteType: "UP",
-                },
-              },
-              comments: true,
-            },
+        user: {
+          select: {
+            name: true,
+            image: true,
           },
-          user: {
-            select: {
-              name: true,
-              image: true,
-            },
+        },
+        comments: {
+          where: {
+            parentCommentId: null,
           },
-          comments: {
-            include: {
-              user: {
-                select: {
-                  name: true,
-                  image: true,
-                },
+          include: {
+            user: {
+              select: {
+                name: true,
+                image: true,
               },
-              replies: {
-                include: {
-                  user: {
-                    select: {
-                      name: true,
-                      image: true,
-                    },
+            },
+            replies: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    image: true,
                   },
                 },
               },
-              parentComment: {
-                select: {
-                  id: true,
-                  content: true,
-                  createdAt: true,
-                },
-              },
-            },
-          },
-          bookmarks: {
-            where: {
-              userId: ctx.session?.user.id,
-            },
-          },
-          resources: true,
-          votes: {
-            where: {
-              userId: ctx.session?.user.id,
             },
           },
         },
+        bookmarks: {
+          where: {
+            userId: ctx.session?.user.id,
+          },
+        },
+        resources: true,
+        votes: {
+          where: {
+            userId: ctx.session?.user.id,
+          },
+          select: {
+            voteType: true,
+          },
+        },
+      },
+    });
+    if (!post) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: `Post with id '${input.id}' not found`,
       });
-      if (!post) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Post with id '${input.id}' not found`,
-        });
-      }
-      return post;
-    }),
+    }
+    return post;
+  }),
 
   all: publicProcedure
     .input(
@@ -110,7 +98,12 @@ export const postRouter = createTRPCRouter({
               comments: true,
             },
           },
-
+          user: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
           bookmarks: {
             where: {
               userId: ctx.session?.user.id,
@@ -129,28 +122,26 @@ export const postRouter = createTRPCRouter({
       return posts;
     }),
 
-  create: publicProcedure
-    .input(newPostSchema)
-    .mutation(async ({ ctx, input }) => {
-      if (!ctx.session?.user.id) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to create a post",
-        });
-      }
-      return ctx.db.post.create({
-        data: {
-          title: input.title,
-          description: input.description,
-          userId: ctx.session.user.id,
-          resources: {
-            createMany: {
-              data: input.resources,
-            },
+  create: publicProcedure.input(newPostSchema).mutation(async ({ ctx, input }) => {
+    if (!ctx.session?.user.id) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "You must be logged in to create a post",
+      });
+    }
+    return await ctx.db.post.create({
+      data: {
+        title: input.title,
+        description: input.description,
+        userId: ctx.session.user.id,
+        resources: {
+          createMany: {
+            data: input.resources,
           },
         },
-      });
-    }),
+      },
+    });
+  }),
 
   vote: publicProcedure
     .input(
@@ -201,9 +192,7 @@ export const postRouter = createTRPCRouter({
       });
     }),
   bookmark: publicProcedure
-    .input(
-      z.object({ postId: z.string(), actionType: z.enum(["ADD", "REMOVE"]) }),
-    )
+    .input(z.object({ postId: z.string(), actionType: z.enum(["ADD", "REMOVE"]) }))
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user.id) {
         throw new TRPCError({

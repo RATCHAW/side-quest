@@ -1,41 +1,74 @@
+"use client";
+
 import Image from "next/image";
-import {
-  ThumbsUp,
-  ThumbsDown,
-  Bookmark,
-  Share2,
-  MessageSquare,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { redirect } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { useSearchParams } from "next/navigation";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PostDialogWrapper } from "./postd-dialog-wrapper";
-import { api } from "@/trpc/server";
 import { CommentSection } from "./comment-section";
 import { PostAction } from "../_components/post-actions";
-import type { PostWithDetails } from "@/server/api/routers/post";
+import type { PostsWithActions, PostWithDetails } from "@/server/api/routers/post";
+import { useRouter } from "next/navigation";
+import { api } from "@/trpc/react";
 
-export const PostDialog = async ({ post }: { post: PostWithDetails }) => {
+const createIntialPostData = (post: PostsWithActions[number]): PostWithDetails => {
+  return {
+    id: post.id,
+    title: post.title,
+    description: post.description,
+    imageUrl: post.imageUrl,
+    createdAt: new Date(post.createdAt),
+    user: {
+      name: post.user.name,
+      image: post.user.image,
+    },
+    userId: post.userId,
+    votes: post.votes,
+    _count: {
+      comments: post._count?.comments ?? 0,
+      votes: post._count?.votes ?? 0,
+    },
+    bookmarks: post.bookmarks,
+    updatedAt: new Date(post.updatedAt),
+    resources: [],
+    comments: [],
+  };
+};
+
+export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] }) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const q = searchParams.get("q");
+  const p = searchParams.get("p");
+  const initialData = createIntialPostData(postInit);
+
+  const { data: post } = api.post.getById.useQuery(
+    {
+      id: postInit.id,
+    },
+    {
+      initialData: initialData,
+      enabled: p === postInit.id,
+      staleTime: 0,
+    },
+  );
+
   return (
-    <PostDialogWrapper>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+    <Dialog
+      open={p === postInit.id}
+      onOpenChange={(open) => {
+        if (!open) {
+          const query = q ? `?q=${encodeURIComponent(q)}` : "";
+          router.push(`/${query}`);
+        }
+      }}
+    >
+      <DialogContent className="max-h-[90vh] w-full overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">{post.title}</DialogTitle>
           <DialogDescription className="flex items-center gap-2 text-sm">
             <Avatar className="h-6 w-6">
-              <AvatarImage
-                src={post.user.image || undefined}
-                alt={post.user.name}
-              />
+              <AvatarImage src={post.user.image || undefined} alt={post.user.name} />
               <AvatarFallback>{post.user.name.charAt(0)}</AvatarFallback>
             </Avatar>
             Posted by {post.user.name} • {post.createdAt.toLocaleDateString()}
@@ -80,6 +113,6 @@ export const PostDialog = async ({ post }: { post: PostWithDetails }) => {
 
         <CommentSection comments={post.comments} postId={post.id} />
       </DialogContent>
-    </PostDialogWrapper>
+    </Dialog>
   );
 };

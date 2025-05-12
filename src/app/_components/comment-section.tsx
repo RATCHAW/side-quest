@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { NewComment } from "./new-comment";
 import type { Post } from "@prisma/client";
 import type { PostWithDetails } from "@/server/api/routers/post";
+import { NewCommentReply } from "./new-comment-reply";
 
 interface CommentSectionProps {
   comments: PostWithDetails["comments"];
@@ -34,6 +35,7 @@ export function CommentSection({ comments, postId }: CommentSectionProps) {
                 </span>
               </div>
               <p className="text-gray-800">{comment.content}</p>
+              <NewCommentReply postId={postId} parentId={comment.id} />
 
               {comment.replies && comment.replies.length > 0 && (
                 <div className="mt-4 space-y-4 border-l-2 border-gray-100 pl-6">
@@ -56,15 +58,15 @@ export function CommentSection({ comments, postId }: CommentSectionProps) {
                           </span>
                         </div>
                         <p className="text-gray-800">{reply.content}</p>
+                        <NewCommentReply
+                          postId={postId}
+                          parentId={comment.id}
+                        />
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-
-              <Button variant="ghost" size="sm" className="mt-2 text-gray-500">
-                Reply
-              </Button>
             </div>
           </div>
         ))}

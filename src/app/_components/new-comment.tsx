@@ -17,14 +17,17 @@ import { newPostCommentSchema, type NewPostComment } from "@/validation/post";
 import { api } from "@/trpc/react";
 import type { Post, PostComment } from "@prisma/client";
 import { authClient } from "@/lib/auth-client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const NewComment = ({
   postId,
   parentId,
 }: {
   postId: Post["id"];
-  parentId: PostComment["parentCommentId"];
+  parentId: PostComment["parentCommentId"] | null;
 }) => {
+  const queryClient = useQueryClient();
+
   const form = useForm<NewPostComment>({
     resolver: zodResolver(newPostCommentSchema),
     defaultValues: {
@@ -35,6 +38,7 @@ export const NewComment = ({
   const createComment = api.postComment.create.useMutation({
     onSuccess: async () => {
       form.reset();
+      await queryClient.invalidateQueries([]);
     },
   });
 

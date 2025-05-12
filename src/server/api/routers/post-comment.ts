@@ -19,7 +19,7 @@ export const commentRouter = createTRPCRouter({
         });
       }
 
-      return ctx.db.postComment.create({
+      return await ctx.db.postComment.create({
         data: {
           content: input.content,
           postId: input.postId,

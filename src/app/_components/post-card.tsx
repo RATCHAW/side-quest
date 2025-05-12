@@ -3,6 +3,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Link from "next/link";
 import type { PostsWithActions } from "@/server/api/routers/post";
 import { PostAction } from "./post-actions";
+import { PostDialog } from "./post-dialog";
 
 interface PostCardProps {
   post: PostsWithActions[number];
@@ -30,6 +31,7 @@ export function PostCard({ post, query }: PostCardProps) {
         <CardFooter className="w-full">
           <PostAction post={post} />
         </CardFooter>
+        <PostDialog postInit={post} />
       </Card>
     </div>
   );

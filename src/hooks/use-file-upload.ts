@@ -1,14 +1,10 @@
 "use client";
 
+import { upload } from "@imagekit/next";
+import type { AuthResponse } from "@imagekit/next/server";
+import { useQuery } from "@tanstack/react-query";
 import type React from "react";
-import {
-  useCallback,
-  useRef,
-  useState,
-  type ChangeEvent,
-  type DragEvent,
-  type InputHTMLAttributes,
-} from "react";
+import { useCallback, useRef, useState, type ChangeEvent, type DragEvent, type InputHTMLAttributes } from "react";
 
 export type FileMetadata = {
   name: string;
@@ -51,16 +47,12 @@ export type FileUploadActions = {
   handleDrop: (e: DragEvent<HTMLElement>) => void;
   handleFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
   openFileDialog: () => void;
-  getInputProps: (
-    props?: InputHTMLAttributes<HTMLInputElement>,
-  ) => InputHTMLAttributes<HTMLInputElement> & {
+  getInputProps: (props?: InputHTMLAttributes<HTMLInputElement>) => InputHTMLAttributes<HTMLInputElement> & {
     ref: React.Ref<HTMLInputElement>;
   };
 };
 
-export const useFileUpload = (
-  options: FileUploadOptions = {},
-): [FileUploadState, FileUploadActions] => {
+export const useFileUpload = (options: FileUploadOptions = {}): [FileUploadState, FileUploadActions] => {
   const {
     maxFiles = Infinity,
     maxSize = Infinity,
@@ -121,15 +113,12 @@ export const useFileUpload = (
     [accept, maxSize],
   );
 
-  const createPreview = useCallback(
-    (file: File | FileMetadata): string | undefined => {
-      if (file instanceof File) {
-        return URL.createObjectURL(file);
-      }
-      return file.url;
-    },
-    [],
-  );
+  const createPreview = useCallback((file: File | FileMetadata): string | undefined => {
+    if (file instanceof File) {
+      return URL.createObjectURL(file);
+    }
+    return file.url;
+  }, []);
 
   const generateUniqueId = useCallback((file: File | FileMetadata): string => {
     if (file instanceof File) {
@@ -142,11 +131,7 @@ export const useFileUpload = (
     setState((prev) => {
       // Clean up object URLs
       prev.files.forEach((file) => {
-        if (
-          file.preview &&
-          file.file instanceof File &&
-          file.file.type.startsWith("image/")
-        ) {
+        if (file.preview && file.file instanceof File && file.file.type.startsWith("image/")) {
           URL.revokeObjectURL(file.preview);
         }
       });
@@ -182,11 +167,7 @@ export const useFileUpload = (
       }
 
       // Check if adding these files would exceed maxFiles (only in multiple mode)
-      if (
-        multiple &&
-        maxFiles !== Infinity &&
-        state.files.length + newFilesArray.length > maxFiles
-      ) {
+      if (multiple && maxFiles !== Infinity && state.files.length + newFilesArray.length > maxFiles) {
         errors.push(`You can only upload a maximum of ${maxFiles} files.`);
         setState((prev) => ({ ...prev, errors }));
         return;
@@ -198,9 +179,7 @@ export const useFileUpload = (
         // Only check for duplicates if multiple files are allowed
         if (multiple) {
           const isDuplicate = state.files.some(
-            (existingFile) =>
-              existingFile.file.name === file.name &&
-              existingFile.file.size === file.size,
+            (existingFile) => existingFile.file.name === file.name && existingFile.file.size === file.size,
           );
 
           // Skip duplicate files silently
@@ -237,9 +216,7 @@ export const useFileUpload = (
         onFilesAdded?.(validFiles);
 
         setState((prev) => {
-          const newFiles = !multiple
-            ? validFiles
-            : [...prev.files, ...validFiles];
+          const newFiles = !multiple ? validFiles : [...prev.files, ...validFiles];
           onFilesChange?.(newFiles);
           return {
             ...prev,
@@ -411,7 +388,37 @@ export const formatBytes = (bytes: number, decimals = 2): string => {
 
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return (
-    Number.parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + (sizes[i] || "")
-  );
+  return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + (sizes[i] || "");
+};
+
+//TODO: use trpc isntead
+
+export const fetchAuthCredentials = async () => {
+  try {
+    // Perform the request to the upload authentication endpoint.
+    const response = await fetch("/api/upload-auth");
+    if (!response.ok) {
+      // If the server response is not successful, extract the error text for debugging.
+      const errorText = await response.text();
+      throw new Error(`Request failed with status ${response.status}: ${errorText}`);
+    }
+
+    // Parse and destructure the response JSON for upload credentials.
+    const data = await response.json();
+    const { signature, expire, token, publicKey } = data;
+    return { signature, expire, token, publicKey };
+  } catch (error) {
+    // Log the original error for debugging before rethrowing a new error.
+    console.error("Authentication error:", error);
+    throw new Error("Authentication request failed");
+  }
+};
+
+export const useUploadAuth = () => {
+  return useQuery<AuthResponse>({
+    queryKey: ["uploadAuth"],
+    queryFn: fetchAuthCredentials,
+    staleTime: 1000 * 60 * 5, // Consider credentials stale after 5 minutes
+    retry: 2, // Retry failed requests up to 2 times
+  });
 };

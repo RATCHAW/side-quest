@@ -134,6 +134,7 @@ export const postRouter = createTRPCRouter({
         title: input.title,
         description: input.description,
         userId: ctx.session.user.id,
+        imageUrl: input.imageUrl,
         resources: {
           createMany: {
             data: input.resources,

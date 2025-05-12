@@ -4,37 +4,50 @@ import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { type z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/melecules/file-upload";
-import { useFileUpload } from "@/hooks/use-file-upload";
+import { useFileUpload, useUploadAuth } from "@/hooks/use-file-upload";
 import { X } from "lucide-react";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { newPostSchema } from "@/validation/post";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+import { upload } from "@imagekit/next";
+import { Progress } from "@/components/ui/progress";
+import { env } from "@/env";
 
 type FormValues = z.infer<typeof newPostSchema>;
 
 export function NewPostDialog() {
   const [open, setOpen] = useState(false);
+  const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const router = useRouter();
+
+  const { refetch } = useUploadAuth();
+  const { mutateAsync: uploadFileAsync } = useMutation({
+    mutationFn: async (file: File) => {
+      const { data } = await refetch();
+      if (!data) return;
+      const response = await upload({
+        expire: data.expire,
+        token: data.token,
+        signature: data.signature,
+        publicKey: env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY,
+        file,
+        fileName: file.name,
+        onProgress: (event) => {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          setImageUploadProgress(progress);
+        },
+      });
+      return response;
+    },
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(newPostSchema),
@@ -56,7 +69,7 @@ export function NewPostDialog() {
       toast("Idea has been created", {
         action: {
           label: "View",
-          onClick: () => router.push(`${data.id}`),
+          onClick: () => router.push(`/?p=${data.id}`),
         },
       });
     },
@@ -75,8 +88,16 @@ export function NewPostDialog() {
     maxSize,
   });
 
-  function onSubmit(values: FormValues) {
-    createPost.mutate(values);
+  async function onSubmit(values: FormValues) {
+    let imageUrl: string | undefined = undefined;
+    if (fileUpload[0].files[0]?.file) {
+      const data = await uploadFileAsync(fileUpload[0].files[0]?.file as File);
+      imageUrl = data?.url;
+    }
+    createPost.mutate({
+      ...values,
+      imageUrl: imageUrl,
+    });
   }
 
   return (
@@ -89,6 +110,7 @@ export function NewPostDialog() {
           <DialogTitle>Share Your Project Idea</DialogTitle>
         </DialogHeader>
         <FileUpload fileUpload={fileUpload} maxSizeMB={maxSizeMB} />
+        {fileUpload[0].files[0]?.file && imageUploadProgress > 0 && <Progress value={imageUploadProgress} />}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -99,10 +121,7 @@ export function NewPostDialog() {
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Enter a catchy title for your idea"
-                      {...field}
-                    />
+                    <Input placeholder="Enter a catchy title for your idea" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -116,10 +135,7 @@ export function NewPostDialog() {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Describe your project idea in detail"
-                      {...field}
-                    />
+                    <Textarea placeholder="Describe your project idea in detail" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -129,19 +145,14 @@ export function NewPostDialog() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold">Resources</h4>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => append({ title: "", url: "" })}
-                >
+                <Button type="button" variant="outline" onClick={() => append({ title: "", url: "" })}>
                   + Add Resource
                 </Button>
               </div>
 
               {fields.length === 0 && (
                 <p className="text-sm text-gray-500">
-                  Add links to helpful resources like APIs, tutorials, or design
-                  inspiration
+                  Add links to helpful resources like APIs, tutorials, or design inspiration
                 </p>
               )}
 

@@ -105,6 +105,13 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
       vote.mutate({ postId: post.id, voteType });
     }
   };
+
+  const handleShare = async () => {
+    await navigator.clipboard.writeText(window.location.href);
+    toast.success("Link copied to clipboard", {
+      position: "bottom-center",
+    });
+  };
   return (
     <div className="flex w-full justify-between border-t pt-4">
       <div className="flex items-center space-x-1">
@@ -135,7 +142,7 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
         >
           <Bookmark className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon">
+        <Button onClick={handleShare} variant="ghost" size="icon">
           <Share2 className="h-4 w-4" />
         </Button>
         <Button variant="ghost" size="icon">

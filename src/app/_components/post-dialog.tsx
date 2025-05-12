@@ -9,6 +9,7 @@ import { CommentSection } from "./comment-section";
 import { PostAction } from "../_components/post-actions";
 import type { PostsWithActions, PostWithDetails } from "@/server/api/routers/post";
 import { useRouter } from "next/navigation";
+import { formatDistanceToNow } from "date-fns";
 import { api } from "@/trpc/react";
 
 const createIntialPostData = (post: PostsWithActions[number]): PostWithDetails => {
@@ -52,7 +53,7 @@ export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] })
       staleTime: 0,
     },
   );
-
+  const createAt = formatDistanceToNow(post.createdAt);
   return (
     <Dialog
       open={p === postInit.id}
@@ -63,7 +64,7 @@ export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] })
         }
       }}
     >
-      <DialogContent className="max-h-[90vh] w-full overflow-y-auto">
+      <DialogContent className="max-h-[90vh] !max-w-5xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">{post.title}</DialogTitle>
           <DialogDescription className="flex items-center gap-2 text-sm">
@@ -71,7 +72,7 @@ export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] })
               <AvatarImage src={post.user.image || undefined} alt={post.user.name} />
               <AvatarFallback>{post.user.name.charAt(0)}</AvatarFallback>
             </Avatar>
-            Posted by {post.user.name} • {post.createdAt.toLocaleDateString()}
+            Posted by {post.user.name} • {createAt}
           </DialogDescription>
         </DialogHeader>
 

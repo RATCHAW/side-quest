@@ -1,9 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { NewComment } from "./new-comment";
 import type { Post } from "@prisma/client";
 import type { PostWithDetails } from "@/server/api/routers/post";
 import { NewCommentReply } from "./new-comment-reply";
+import { formatDistanceToNow } from "date-fns";
 
 interface CommentSectionProps {
   comments: PostWithDetails["comments"];
@@ -21,18 +21,13 @@ export function CommentSection({ comments, postId }: CommentSectionProps) {
         {comments.map((comment) => (
           <div key={comment.id} className="flex gap-4">
             <Avatar>
-              <AvatarImage
-                src={comment.user.image || undefined}
-                alt={comment.user.name}
-              />
+              <AvatarImage src={comment.user.image || undefined} alt={comment.user.name} />
               <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="mb-1 flex items-center gap-2">
                 <span className="font-medium">{comment.user.name}</span>
-                <span className="text-xs text-gray-500">
-                  {comment.createdAt.toDateString()}
-                </span>
+                <span className="text-xs text-gray-500">{formatDistanceToNow(comment.createdAt)}</span>
               </div>
               <p className="text-gray-800">{comment.content}</p>
               <NewCommentReply postId={postId} parentId={comment.id} />
@@ -42,26 +37,16 @@ export function CommentSection({ comments, postId }: CommentSectionProps) {
                   {comment.replies.map((reply) => (
                     <div key={reply.id} className="flex gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage
-                          src={reply.user.image || undefined}
-                          alt={reply.user.name}
-                        />
-                        <AvatarFallback>
-                          {reply.user.name.charAt(0)}
-                        </AvatarFallback>
+                        <AvatarImage src={reply.user.image || undefined} alt={reply.user.name} />
+                        <AvatarFallback>{reply.user.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="mb-1 flex items-center gap-2">
                           <span className="font-medium">{reply.user.name}</span>
-                          <span className="text-xs text-gray-500">
-                            {reply.createdAt.toDateString()}
-                          </span>
+                          <span className="text-xs text-gray-500">{formatDistanceToNow(reply.createdAt)}</span>
                         </div>
                         <p className="text-gray-800">{reply.content}</p>
-                        <NewCommentReply
-                          postId={postId}
-                          parentId={comment.id}
-                        />
+                        <NewCommentReply postId={postId} parentId={comment.id} />
                       </div>
                     </div>
                   ))}

@@ -5,19 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { newPostCommentSchema, type NewPostComment } from "@/validation/post";
 import { api } from "@/trpc/react";
 import type { Post, PostComment } from "@prisma/client";
 import { authClient } from "@/lib/auth-client";
 import { useQueryClient } from "@tanstack/react-query";
+import { parseAsBoolean, useQueryState } from "nuqs";
+import { useEffect } from "react";
 
 export const NewComment = ({
   postId,
@@ -26,6 +21,7 @@ export const NewComment = ({
   postId: Post["id"];
   parentId: PostComment["parentCommentId"] | null;
 }) => {
+  const [comment] = useQueryState("comment", parseAsBoolean.withDefault(false));
   const queryClient = useQueryClient();
 
   const form = useForm<NewPostComment>({
@@ -35,10 +31,25 @@ export const NewComment = ({
     },
   });
 
+  useEffect(() => {
+    if (comment) {
+      form.setFocus("content");
+    }
+  }, [comment, form]);
+
   const createComment = api.postComment.create.useMutation({
     onSuccess: async () => {
       form.reset();
-      await queryClient.invalidateQueries([]);
+
+      await queryClient.invalidateQueries({
+        queryKey: [
+          ["post", "getById"],
+          {
+            input: { id: postId },
+            type: "query",
+          },
+        ],
+      });
     },
   });
 
@@ -53,10 +64,7 @@ export const NewComment = ({
   return (
     <div className="flex gap-4">
       <Avatar>
-        <AvatarImage
-          src={data?.user.image || undefined}
-          alt={data?.user.name}
-        />
+        <AvatarImage src={data?.user.image || undefined} alt={data?.user.name} />
         <AvatarFallback>{data?.user.name.charAt(0)}</AvatarFallback>
       </Avatar>
       <div className="flex-1 items-end space-y-2">

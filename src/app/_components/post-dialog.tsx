@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,6 +10,7 @@ import type { PostsWithActions, PostWithDetails } from "@/server/api/routers/pos
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { api } from "@/trpc/react";
+import { useQueryState } from "nuqs";
 
 const createIntialPostData = (post: PostsWithActions[number]): PostWithDetails => {
   return {
@@ -38,9 +38,8 @@ const createIntialPostData = (post: PostsWithActions[number]): PostWithDetails =
 
 export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] }) => {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const q = searchParams.get("q");
-  const p = searchParams.get("p");
+  const [q] = useQueryState("q");
+  const [p] = useQueryState("p");
   const initialData = createIntialPostData(postInit);
 
   const { data: post } = api.post.getById.useQuery(
@@ -112,7 +111,7 @@ export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] })
           <PostAction post={post} />
         </div>
 
-        <CommentSection comments={post.comments} postId={post.id} />
+        <CommentSection commentsCount={post._count.comments} comments={post.comments} postId={post.id} />
       </DialogContent>
     </Dialog>
   );

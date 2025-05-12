@@ -5,13 +5,13 @@ import type { PostsWithActions } from "@/server/api/routers/post";
 import { api } from "@/trpc/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Bookmark, MessageSquare, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
   const queryClient = useQueryClient();
-  const searchParams = useSearchParams();
-  const search = searchParams.get("q");
+  const [q] = useQueryState("q");
 
   const currentVote = post.votes[0]?.voteType;
 
@@ -27,7 +27,7 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
         [
           ["post", "all"],
           {
-            input: { q: search ?? undefined },
+            input: { q: q ?? undefined },
             type: "query",
           },
         ],
@@ -52,6 +52,29 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
           return newData;
         },
       );
+      queryClient.setQueryData(
+        [
+          ["post", "getById"],
+          {
+            input: { id: post.id },
+            type: "query",
+          },
+        ],
+        (oldData: PostsWithActions[number]) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            _count: {
+              ...oldData._count,
+              votes:
+                data.voteType === "DOWN" || data.voteType === undefined
+                  ? Math.max(0, oldData._count.votes - 1)
+                  : oldData._count.votes + 1,
+            },
+            votes: [data],
+          };
+        },
+      );
     },
   });
 
@@ -66,7 +89,7 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
         [
           ["post", "all"],
           {
-            input: { q: search ?? undefined },
+            input: { q: q ?? undefined },
             type: "query",
           },
         ],
@@ -82,6 +105,22 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
             return item;
           });
           return newData;
+        },
+      );
+      queryClient.setQueryData(
+        [
+          ["post", "getById"],
+          {
+            input: { id: post.id },
+            type: "query",
+          },
+        ],
+        (oldData: PostsWithActions[number]) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            bookmarks: variables.actionType === "ADD" ? [data] : [],
+          };
         },
       );
     },
@@ -112,6 +151,7 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
       position: "bottom-center",
     });
   };
+
   return (
     <div className="flex w-full justify-between border-t pt-4">
       <div className="flex items-center space-x-1">
@@ -145,9 +185,11 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
         <Button onClick={handleShare} variant="ghost" size="icon">
           <Share2 className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon">
-          <MessageSquare className="h-4 w-4" />
-          <span className="ml-1 text-xs">{post._count.comments}</span>
+        <Button asChild variant="ghost" size="icon">
+          <Link href={`/?p=${post.id}${q ? `&q=${q}` : ""}&comment=true`}>
+            <MessageSquare className="h-4 w-4" />
+            <span className="ml-1 text-xs">{post._count.comments}</span>
+          </Link>
         </Button>
       </div>
     </div>

@@ -1,9 +1,4 @@
-import {
-  BoltIcon,
-  ChevronDownIcon,
-  Layers2Icon,
-  LogOutIcon,
-} from "lucide-react";
+import { BoltIcon, ChevronDownIcon, Layers2Icon, LogOutIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,7 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { type User } from "better-auth";
 
+import { authClient } from "@/lib/auth-client";
+import { useMutation } from "@tanstack/react-query";
+
 export const ProfileDropdown = ({ user }: { user: User }) => {
+  const { mutate: signOut } = useMutation({
+    mutationKey: ["auth", "logout"],
+    mutationFn: () => authClient.signOut(),
+  });
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -27,21 +29,13 @@ export const ProfileDropdown = ({ user }: { user: User }) => {
             <AvatarImage src="./avatar.jpg" alt="Profile image" />
             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
-          <ChevronDownIcon
-            size={16}
-            className="opacity-60"
-            aria-hidden="true"
-          />
+          <ChevronDownIcon size={16} className="opacity-60" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="max-w-64">
         <DropdownMenuLabel className="flex min-w-0 flex-col">
-          <span className="text-foreground truncate text-sm font-medium">
-            {user.name}
-          </span>
-          <span className="text-muted-foreground truncate text-xs font-normal">
-            {user.email}
-          </span>
+          <span className="text-foreground truncate text-sm font-medium">{user.name}</span>
+          <span className="text-muted-foreground truncate text-xs font-normal">{user.email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
@@ -55,7 +49,7 @@ export const ProfileDropdown = ({ user }: { user: User }) => {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => signOut()}>
           <LogOutIcon size={16} className="opacity-60" aria-hidden="true" />
           <span>Logout</span>
         </DropdownMenuItem>

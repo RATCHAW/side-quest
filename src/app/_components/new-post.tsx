@@ -73,11 +73,6 @@ export function NewPostDialog() {
         },
       });
     },
-    onError: (error) => {
-      if (error.data?.code === "UNAUTHORIZED") {
-        toast.error("You must be logged in to create a post");
-      }
-    },
   });
 
   const maxSizeMB = 5;

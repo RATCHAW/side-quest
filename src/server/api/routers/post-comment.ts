@@ -1,10 +1,10 @@
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc";
 import { newPostCommentSchema } from "@/validation/post";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 export const commentRouter = createTRPCRouter({
-  create: publicProcedure
+  create: protectedProcedure
     .input(
       newPostCommentSchema.extend({
         postId: z.string(),
@@ -12,13 +12,6 @@ export const commentRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.session?.user.id) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to create a comment",
-        });
-      }
-
       return await ctx.db.postComment.create({
         data: {
           content: input.content,

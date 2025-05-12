@@ -16,12 +16,6 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
   const currentVote = post.votes[0]?.voteType;
 
   const vote = api.post.vote.useMutation({
-    onError: (error) => {
-      if (error.data?.code === "UNAUTHORIZED") {
-        toast.error("You must be logged in to vote");
-      }
-    },
-
     onSuccess: (data) => {
       queryClient.setQueryData(
         [
@@ -79,11 +73,6 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
   });
 
   const bookmark = api.post.bookmark.useMutation({
-    onError: (error) => {
-      if (error.data?.code === "UNAUTHORIZED") {
-        toast.error("You must be logged in to bookmark");
-      }
-    },
     onSuccess: (data, variables) => {
       queryClient.setQueryData(
         [

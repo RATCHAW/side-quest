@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc";
 import { newPostSchema } from "@/validation/post";
 import { TRPCError, type inferRouterOutputs } from "@trpc/server";
 
@@ -68,6 +68,7 @@ export const postRouter = createTRPCRouter({
     if (!post) {
       throw new TRPCError({
         code: "NOT_FOUND",
+        cause: "POST_NOT_FOUND",
         message: `Post with id '${input.id}' not found`,
       });
     }
@@ -122,13 +123,7 @@ export const postRouter = createTRPCRouter({
       return posts;
     }),
 
-  create: publicProcedure.input(newPostSchema).mutation(async ({ ctx, input }) => {
-    if (!ctx.session?.user.id) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "You must be logged in to create a post",
-      });
-    }
+  create: protectedProcedure.input(newPostSchema).mutation(async ({ ctx, input }) => {
     return await ctx.db.post.create({
       data: {
         title: input.title,
@@ -144,7 +139,7 @@ export const postRouter = createTRPCRouter({
     });
   }),
 
-  vote: publicProcedure
+  vote: protectedProcedure
     .input(
       z.object({
         postId: z.string(),
@@ -152,12 +147,6 @@ export const postRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.session?.user.id) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to vote on a post",
-        });
-      }
       if (input.voteType === "REMOVE") {
         await ctx.db.postVote.delete({
           where: {
@@ -192,15 +181,9 @@ export const postRouter = createTRPCRouter({
         },
       });
     }),
-  bookmark: publicProcedure
+  bookmark: protectedProcedure
     .input(z.object({ postId: z.string(), actionType: z.enum(["ADD", "REMOVE"]) }))
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.session?.user.id) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to bookmark a post",
-        });
-      }
       if (input.actionType === "ADD") {
         return await ctx.db.postBookmark.create({
           data: {

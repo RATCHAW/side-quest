@@ -10,7 +10,6 @@ import { newPostCommentSchema, type NewPostComment } from "@/validation/post";
 import { api } from "@/trpc/react";
 import type { Post, PostComment } from "@prisma/client";
 import { authClient } from "@/lib/auth-client";
-import { useQueryClient } from "@tanstack/react-query";
 import { parseAsBoolean, useQueryState } from "nuqs";
 import { useEffect } from "react";
 
@@ -22,7 +21,7 @@ export const NewComment = ({
   parentId: PostComment["parentCommentId"] | null;
 }) => {
   const [comment] = useQueryState("comment", parseAsBoolean.withDefault(false));
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
   const form = useForm<NewPostComment>({
     resolver: zodResolver(newPostCommentSchema),
@@ -41,14 +40,8 @@ export const NewComment = ({
     onSuccess: async () => {
       form.reset();
 
-      await queryClient.invalidateQueries({
-        queryKey: [
-          ["post", "getById"],
-          {
-            input: { id: postId },
-            type: "query",
-          },
-        ],
+      await utils.post.getById.invalidate({
+        id: postId,
       });
     },
   });

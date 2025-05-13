@@ -13,115 +13,62 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
   const queryClient = useQueryClient();
   const [q] = useQueryState("q");
 
+  const utils = api.useUtils();
+
   const currentVote = post.votes[0]?.voteType;
 
   const vote = api.post.vote.useMutation({
-    onSuccess: (data) => {
-      queryClient.setQueryData(
-        [
-          ["post", "all"],
-          {
-            input: { q: q ?? undefined },
-            type: "query",
-          },
-        ],
-        (oldData: PostsWithActions) => {
-          if (!oldData) return oldData;
-          const newData = oldData.map((item) => {
-            if (item.id === post.id) {
-              return {
-                ...item,
-                _count: {
-                  ...item._count,
-                  votes:
-                    data.voteType === "DOWN" || data.voteType === undefined
-                      ? Math.max(0, item._count.votes - 1)
-                      : item._count.votes + 1,
-                },
-                votes: [data],
-              };
-            }
-            return item;
-          });
-          return newData;
-        },
-      );
-      queryClient.setQueryData(
-        [
-          ["post", "getById"],
-          {
-            input: { id: post.id },
-            type: "query",
-          },
-        ],
-        (oldData: PostsWithActions[number]) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            _count: {
-              ...oldData._count,
-              votes:
-                data.voteType === "DOWN" || data.voteType === undefined
-                  ? Math.max(0, oldData._count.votes - 1)
-                  : oldData._count.votes + 1,
-            },
-            votes: [data],
-          };
-        },
-      );
+    onSuccess: async (data) => {
+      utils.post.all.setData({ q: q ?? undefined }, (oldData) => {
+        if (!oldData) return oldData;
+        const newData = oldData.map((item) => {
+          if (item.id === post.id) {
+            return {
+              ...item,
+              _count: {
+                ...item._count,
+                votes:
+                  data.voteType === "DOWN" || data.voteType === undefined
+                    ? Math.max(0, item._count.votes - 1)
+                    : item._count.votes + 1,
+              },
+              votes: data.voteType === undefined ? [] : [{ voteType: data.voteType }],
+            };
+          }
+          return item;
+        });
+        return newData;
+      });
+
+      await utils.post.getById.invalidate({ id: post.id });
     },
   });
 
   const bookmark = api.post.bookmark.useMutation({
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(
-        [
-          ["post", "all"],
-          {
-            input: { q: q ?? undefined },
-            type: "query",
-          },
-        ],
-        (oldData: PostsWithActions) => {
-          if (!oldData) return oldData;
-          const newData = oldData.map((item) => {
-            if (item.id === variables.postId) {
-              return {
-                ...item,
-                bookmarks: variables.actionType === "ADD" ? [data] : [],
-              };
-            }
-            return item;
-          });
-          return newData;
-        },
-      );
-      queryClient.setQueryData(
-        [
-          ["post", "getById"],
-          {
-            input: { id: post.id },
-            type: "query",
-          },
-        ],
-        (oldData: PostsWithActions[number]) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            bookmarks: variables.actionType === "ADD" ? [data] : [],
-          };
-        },
-      );
+    onSuccess: async (data, variables) => {
+      utils.post.all.setData({ q: q ?? undefined }, (oldData) => {
+        if (!oldData) return oldData;
+        const newData = oldData.map((item) => {
+          if (item.id === variables.postId) {
+            return {
+              ...item,
+              bookmarks: variables.actionType === "ADD" ? (data ? [data] : []) : [],
+            };
+          }
+          return item;
+        });
+        return newData;
+      });
+
+      await utils.post.getById.invalidate({ id: post.id });
     },
   });
 
   const handleBookmark = () => {
     console.log(post.bookmarks);
     if (post.bookmarks.length > 0) {
-      console.log("remove");
       bookmark.mutate({ postId: post.id, actionType: "REMOVE" });
     } else {
-      console.log("add");
       bookmark.mutate({ postId: post.id, actionType: "ADD" });
     }
   };

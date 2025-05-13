@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/melecules/file-upload";
-import { useFileUpload, useUploadAuth } from "@/hooks/use-file-upload";
+import { useFileUpload } from "@/hooks/use-file-upload";
 import { X } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { newPostSchema } from "@/validation/post";
@@ -28,11 +28,16 @@ export function NewPostDialog() {
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const router = useRouter();
 
-  const { refetch } = useUploadAuth();
+  const uploadAuth = api.upload.getAuthCredentials.useQuery(undefined, {
+    staleTime: 1000 * 60 * 5, // Consider credentials stale after 5 minutes
+    retry: 2, // Retry failed requests up to 2 times
+    enabled: false, // Don't fetch on component mount
+  });
   const { mutateAsync: uploadFileAsync } = useMutation({
     mutationFn: async (file: File) => {
-      const { data } = await refetch();
+      const { data } = await uploadAuth.refetch();
       if (!data) return;
+      console.log("returned data", data);
       const response = await upload({
         expire: data.expire,
         token: data.token,

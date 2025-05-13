@@ -71,6 +71,9 @@ export function NewPostDialog() {
   const createPost = api.post.create.useMutation({
     onSuccess: async (data) => {
       setOpen(false);
+      form.reset();
+      setImageUploadProgress(0);
+      uploadActions.clearFiles();
       toast("Idea has been created", {
         action: {
           label: "View",
@@ -83,15 +86,15 @@ export function NewPostDialog() {
   const maxSizeMB = 5;
   const maxSize = maxSizeMB * 1024 * 1024;
 
-  const fileUpload = useFileUpload({
+  const [state, uploadActions] = useFileUpload({
     accept: "image/*",
     maxSize,
   });
 
   async function onSubmit(values: FormValues) {
     let imageUrl: string | undefined = undefined;
-    if (fileUpload[0].files[0]?.file) {
-      const data = await uploadFileAsync(fileUpload[0].files[0]?.file as File);
+    if (state.files[0]?.file) {
+      const data = await uploadFileAsync(state.files[0]?.file as File);
       imageUrl = data?.url;
     }
     createPost.mutate({
@@ -109,8 +112,8 @@ export function NewPostDialog() {
         <DialogHeader>
           <DialogTitle>Share Your Project Idea</DialogTitle>
         </DialogHeader>
-        <FileUpload fileUpload={fileUpload} maxSizeMB={maxSizeMB} />
-        {fileUpload[0].files[0]?.file && imageUploadProgress > 0 && <Progress value={imageUploadProgress} />}
+        <FileUpload fileUpload={[state, uploadActions]} maxSizeMB={maxSizeMB} />
+        {state.files[0]?.file && imageUploadProgress > 0 && <Progress value={imageUploadProgress} />}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

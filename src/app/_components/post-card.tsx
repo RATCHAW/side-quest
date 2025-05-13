@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import type { PostsWithActions } from "@/server/api/routers/post";
 import { PostAction } from "./post-actions";
@@ -13,19 +13,19 @@ interface PostCardProps {
 export function PostCard({ post, query }: PostCardProps) {
   return (
     <div>
-      <Card className="flex h-full flex-col transition-shadow hover:shadow-md">
+      <Card className="flex h-full flex-col gap-4 transition-shadow hover:shadow-md">
         <Link href={`/?p=${post.id}${query ? `&q=${query}` : ""}`}>
-          <div className="relative h-48 w-full">
-            <Image
-              src={post.imageUrl || "/placeholder.svg?height=200&width=400"}
-              alt={post.title}
-              fill
-              className="rounded-t-lg object-cover"
-            />
+          <div className="px-4">
+            <div className="relative h-48 w-full">
+              {post.imageUrl ? (
+                <Image src={post.imageUrl} alt={post.title} fill className="rounded-3xl" />
+              ) : (
+                <CardDescription className="line-clamp-3 truncate">{post.description}</CardDescription>
+              )}
+            </div>
           </div>
           <CardContent className="flex-grow pt-4">
-            <h2 className="mb-2 text-xl font-bold">{post.title}</h2>
-            <p className="line-clamp-3 text-gray-600">{post.description}</p>
+            <CardTitle className="truncate text-xl font-bold">{post.title}</CardTitle>
           </CardContent>
         </Link>
         <CardFooter className="w-full">

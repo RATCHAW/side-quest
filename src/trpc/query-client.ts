@@ -1,5 +1,4 @@
 import { defaultShouldDehydrateQuery, QueryClient } from "@tanstack/react-query";
-import type { Variable } from "lucide-react";
 import { toast } from "sonner";
 import SuperJSON from "superjson";
 

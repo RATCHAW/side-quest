@@ -9,7 +9,7 @@ import { Lightbulb } from "lucide-react";
 export const PostsClient = () => {
   const [q] = useQueryState("q");
 
-  const { data: posts } = api.post.all.useQuery({
+  const [posts] = api.post.all.useSuspenseQuery({
     q: q ?? undefined,
   });
 

@@ -1,4 +1,4 @@
-import { BoltIcon, ChevronDownIcon, Layers2Icon, LogOutIcon } from "lucide-react";
+import { BoltIcon, ChevronDownIcon, Layers2Icon, Loader, LogOutIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { authClient } from "@/lib/auth-client";
 import { useMutation } from "@tanstack/react-query";
 
 export const ProfileDropdown = ({ user }: { user: User }) => {
-  const { mutate: signOut } = useMutation({
+  const { mutate: signOut, isPending } = useMutation({
     mutationKey: ["auth", "logout"],
     mutationFn: () => authClient.signOut(),
   });
@@ -26,7 +26,7 @@ export const ProfileDropdown = ({ user }: { user: User }) => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-auto p-0 hover:bg-transparent">
           <Avatar>
-            <AvatarImage src="./avatar.jpg" alt="Profile image" />
+            <AvatarImage src={user.image || undefined} alt="Profile image" />
             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <ChevronDownIcon size={16} className="opacity-60" aria-hidden="true" />
@@ -49,7 +49,11 @@ export const ProfileDropdown = ({ user }: { user: User }) => {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut()}>
-          <LogOutIcon size={16} className="opacity-60" aria-hidden="true" />
+          {isPending ? (
+            <Loader className="animate-spin" />
+          ) : (
+            <LogOutIcon size={16} className="opacity-60" aria-hidden="true" />
+          )}
           <span>Logout</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

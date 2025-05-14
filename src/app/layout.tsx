@@ -6,6 +6,7 @@ import { TRPCReactProvider } from "@/trpc/react";
 import { Navbar } from "./_components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -18,24 +19,20 @@ const geist = Geist({
   variable: "--font-geist-sans",
 });
 
-export default async function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      className={`${geist.variable} dark`}
-      suppressHydrationWarning
-    >
+    <html lang="en" className={`${geist.variable} dark`} suppressHydrationWarning>
       <body>
         <TRPCReactProvider>
-          <NuqsAdapter>
-            <div className="min-h-screen">
-              <Navbar />
-              <main className="container mx-auto px-4 py-8">{children}</main>
-            </div>
-            <Toaster />
-          </NuqsAdapter>
+          <Suspense>
+            <NuqsAdapter>
+              <div className="min-h-screen">
+                <Navbar />
+                <main className="container mx-auto px-4 py-8">{children}</main>
+              </div>
+              <Toaster />
+            </NuqsAdapter>
+          </Suspense>
           <ReactQueryDevtools />
         </TRPCReactProvider>
       </body>

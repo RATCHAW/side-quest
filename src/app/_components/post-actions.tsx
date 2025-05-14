@@ -3,14 +3,12 @@
 import { Button } from "@/components/ui/button";
 import type { PostsWithActions } from "@/server/api/routers/post";
 import { api } from "@/trpc/react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Bookmark, MessageSquare, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 import { useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
-  const queryClient = useQueryClient();
   const [q] = useQueryState("q");
 
   const utils = api.useUtils();
@@ -65,7 +63,6 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
   });
 
   const handleBookmark = () => {
-    console.log(post.bookmarks);
     if (post.bookmarks.length > 0) {
       bookmark.mutate({ postId: post.id, actionType: "REMOVE" });
     } else {

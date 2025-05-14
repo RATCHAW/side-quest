@@ -12,7 +12,6 @@ import { formatDistanceToNow } from "date-fns";
 import { api } from "@/trpc/react";
 import { useQueryState } from "nuqs";
 import { ResourcesSkeleton } from "./skeletons/resources-skeleton";
-import { CommentsSectionSkeleton } from "./skeletons/comment-section-skeleton";
 
 const createIntialPostData = (post: PostsWithActions[number]): PostWithDetails => {
   return {
@@ -45,7 +44,7 @@ export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] })
   const [p] = useQueryState("p");
   const initialData = createIntialPostData(postInit);
 
-  const { data: post, isLoading } = api.post.getById.useQuery(
+  const { data: post, isFetching } = api.post.getById.useQuery(
     {
       id: postInit.id,
     },
@@ -53,6 +52,7 @@ export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] })
       initialData: initialData,
       enabled: p === postInit.id,
       staleTime: 0,
+      refetchOnWindowFocus: false,
     },
   );
   const createAt = formatDistanceToNow(post.createdAt);
@@ -90,15 +90,14 @@ export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] })
         <div className="space-y-4">
           <p>{post.description}</p>
 
-          {isLoading ? (
-            <ResourcesSkeleton resourcesCount={post._count.resources} />
-          ) : (
-            post.resources &&
-            post.resources.length > 0 && (
-              <div>
-                <h3 className="mb-2 text-lg font-semibold">Resources</h3>
-                <div className="space-y-2">
-                  {post.resources.map((resource, index) => (
+          {post._count.resources > 0 && (
+            <div>
+              <h3 className="mb-2 text-lg font-semibold">Resources</h3>
+              <div className="space-y-2">
+                {isFetching && post._count.resources > 0 && post.resources.length === 0 ? (
+                  <ResourcesSkeleton resourcesCount={post._count.resources} />
+                ) : (
+                  post.resources.map((resource, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <Badge variant="outline">{resource.title}</Badge>
                       <a
@@ -110,17 +109,17 @@ export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] })
                         {resource.title}
                       </a>
                     </div>
-                  ))}
-                </div>
+                  ))
+                )}
               </div>
-            )
+            </div>
           )}
 
           <PostAction post={post} />
         </div>
 
         <CommentSection
-          isLoading={isLoading}
+          isLoading={isFetching && post.resources.length === 0}
           commentsCount={post._count.comments}
           comments={post.comments}
           postId={post.id}

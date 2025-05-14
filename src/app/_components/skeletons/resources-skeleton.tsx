@@ -3,7 +3,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function ResourcesSkeleton({ resourcesCount = 1 }: { resourcesCount?: number }) {
   return (
     <div>
-      <h3 className="mb-2 text-lg font-semibold">Resources</h3>
       <div className="space-y-2">
         {Array.from({ length: resourcesCount }).map((_, index) => (
           <div key={index} className="flex items-center gap-2">

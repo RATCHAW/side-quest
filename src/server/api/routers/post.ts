@@ -18,6 +18,7 @@ export const postRouter = createTRPCRouter({
               },
             },
             comments: true,
+            resources: true,
           },
         },
         user: {
@@ -96,6 +97,7 @@ export const postRouter = createTRPCRouter({
                   voteType: "UP",
                 },
               },
+              resources: true,
               comments: true,
             },
           },

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/melecules/file-upload";
 import { useFileUpload } from "@/hooks/use-file-upload";
-import { X } from "lucide-react";
+import { CirclePlus, X } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { newPostSchema } from "@/validation/post";
 import { api } from "@/trpc/react";
@@ -37,7 +37,6 @@ export function NewPostDialog() {
     mutationFn: async (file: File) => {
       const { data } = await uploadAuth.refetch();
       if (!data) return;
-      console.log("returned data", data);
       const response = await upload({
         expire: data.expire,
         token: data.token,
@@ -106,7 +105,9 @@ export function NewPostDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Share New Idea</Button>
+        <Button>
+          <CirclePlus /> <span className="max-md:hidden">Share New Idea</span>
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-auto sm:max-w-[550px]">
         <DialogHeader>

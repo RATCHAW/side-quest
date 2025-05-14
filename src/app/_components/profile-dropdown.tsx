@@ -35,7 +35,6 @@ export const ProfileDropdown = ({ user }: { user: User }) => {
       <DropdownMenuContent align="end" className="max-w-64">
         <DropdownMenuLabel className="flex min-w-0 flex-col">
           <span className="text-foreground truncate text-sm font-medium">{user.name}</span>
-          <span className="text-muted-foreground truncate text-xs font-normal">{user.email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>

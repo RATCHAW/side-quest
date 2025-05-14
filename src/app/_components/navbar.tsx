@@ -1,12 +1,13 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Loader, LogIn, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ProfileDropdown } from "./profile-dropdown";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { NewPostDialog } from "./new-post";
 import { useQueryState } from "nuqs";
+import { useMutation } from "@tanstack/react-query";
 export function Navbar() {
   const [q, setQ] = useQueryState("q", {
     defaultValue: "",
@@ -14,11 +15,13 @@ export function Navbar() {
     throttleMs: 500,
   });
 
-  const signIn = async () => {
-    await authClient.signIn.social({
-      provider: "google",
-    });
-  };
+  const { mutate: signIn, isPending } = useMutation({
+    mutationKey: ["login"],
+    mutationFn: () =>
+      authClient.signIn.social({
+        provider: "google",
+      }),
+  });
 
   const { data } = authClient.useSession();
   return (
@@ -34,12 +37,15 @@ export function Navbar() {
             className="w-full pl-10"
           />
         </div>
-        <div>
+        <div className="flex items-center space-x-2 md:space-x-4">
           <NewPostDialog />
           {data?.user ? (
             <ProfileDropdown user={data.user} />
           ) : (
-            <Button onClick={signIn}>Sign in</Button>
+            <Button onClick={() => signIn()}>
+              {isPending ? <Loader className="animate-spin" /> : <LogIn />}{" "}
+              <span className="max-md:hidden">Sign in</span>
+            </Button>
           )}
         </div>
       </div>

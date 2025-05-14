@@ -8,7 +8,7 @@ const IdeaPage = async ({ searchParams }: { searchParams: Promise<{ p: string; q
 
   return (
     <div>
-      <Suspense key={q} fallback={<PostsSkeleton />}>
+      <Suspense fallback={<PostsSkeleton />}>
         <Posts q={q} />
       </Suspense>
     </div>

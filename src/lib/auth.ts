@@ -5,7 +5,7 @@ import { env } from "@/env";
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
-    provider: "sqlite",
+    provider: "postgresql",
   }),
   socialProviders: {
     google: {

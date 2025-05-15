@@ -54,6 +54,9 @@ export const postRouter = createTRPCRouter({
           where: {
             userId: ctx.session?.user.id,
           },
+          select: {
+            createdAt: true,
+          },
         },
         resources: true,
         votes: {
@@ -110,6 +113,9 @@ export const postRouter = createTRPCRouter({
           bookmarks: {
             where: {
               userId: ctx.session?.user.id,
+            },
+            select: {
+              createdAt: true,
             },
           },
           votes: {

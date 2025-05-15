@@ -1,64 +1,70 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { PostsWithActions } from "@/server/api/routers/post";
 import { api } from "@/trpc/react";
+import type { Vote } from "@prisma/client";
 import { Bookmark, MessageSquare, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
-import Link from "next/link";
-import { useQueryState } from "nuqs";
+import { useQueryStates } from "nuqs";
 import { toast } from "sonner";
+import { postSearchParams } from "./search-params";
 
 export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
-  const [q] = useQueryState("q");
+  const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
 
   const utils = api.useUtils();
 
   const currentVote = post.votes[0]?.voteType;
 
   const vote = api.post.vote.useMutation({
-    onSuccess: async (data) => {
-      utils.post.all.setData({ q: q ?? undefined }, (oldData) => {
+    onMutate: async ({ postId, voteType }) => {
+      const shouldRemoveVote = currentVote === voteType;
+
+      utils.post.all.setData({ q: searchParams.q ?? undefined }, (oldData) => {
         if (!oldData) return oldData;
-        const newData = oldData.map((item) => {
-          if (item.id === post.id) {
+        return oldData.map((item) => {
+          if (item.id === postId) {
             return {
               ...item,
               _count: {
                 ...item._count,
-                votes:
-                  data.voteType === "DOWN" || data.voteType === undefined
-                    ? Math.max(0, item._count.votes - 1)
-                    : item._count.votes + 1,
+                votes: shouldRemoveVote
+                  ? Math.max(0, item._count.votes - 1)
+                  : voteType === "UP"
+                    ? item._count.votes + 1
+                    : Math.max(0, item._count.votes - 1),
               },
-              votes: data.voteType === undefined ? [] : [{ voteType: data.voteType }],
+              votes: shouldRemoveVote ? [] : [{ voteType: voteType as Vote }],
             };
           }
           return item;
         });
-        return newData;
       });
-
-      await utils.post.getById.invalidate({ id: post.id });
     },
   });
 
   const bookmark = api.post.bookmark.useMutation({
-    onSuccess: async (data, variables) => {
-      utils.post.all.setData({ q: q ?? undefined }, (oldData) => {
+    onMutate: async ({ postId, actionType }) => {
+      utils.post.all.setData({ q: searchParams.q ?? undefined }, (oldData) => {
         if (!oldData) return oldData;
-        const newData = oldData.map((item) => {
-          if (item.id === variables.postId) {
+        return oldData.map((item) => {
+          if (item.id === postId) {
             return {
               ...item,
-              bookmarks: variables.actionType === "ADD" ? (data ? [data] : []) : [],
+              bookmarks:
+                actionType === "ADD"
+                  ? [
+                      {
+                        createdAt: new Date(),
+                      },
+                    ]
+                  : [],
             };
           }
           return item;
         });
-        return newData;
       });
-
-      await utils.post.getById.invalidate({ id: post.id });
     },
   });
 
@@ -71,11 +77,10 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
   };
 
   const handleVote = (voteType: "UP" | "DOWN") => {
-    if (voteType === currentVote) {
-      vote.mutate({ postId: post.id, voteType: "REMOVE" });
-    } else {
-      vote.mutate({ postId: post.id, voteType });
-    }
+    vote.mutate({
+      postId: post.id,
+      voteType: voteType,
+    });
   };
 
   const handleShare = async () => {
@@ -90,8 +95,11 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
       <div className="flex items-center space-x-1">
         <Button
           variant="ghost"
-          size="icon"
-          className={currentVote === "UP" ? "text-green-500" : ""}
+          // size="icon"
+          className={cn("", {
+            "text-green-500": currentVote === "UP",
+            "hover:text-green-500/50": currentVote !== "UP",
+          })}
           onClick={() => handleVote("UP")}
         >
           <ThumbsUp className="h-4 w-4" />
@@ -100,7 +108,11 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
         <Button
           variant="ghost"
           size="icon"
-          className={currentVote === "DOWN" ? "text-red-500" : ""}
+          // className={currentVote === "DOWN" ? "text-red-500" : ""}
+          className={cn("", {
+            "text-red-500": currentVote === "DOWN",
+            "hover:text-red-500/50": currentVote !== "DOWN",
+          })}
           onClick={() => handleVote("DOWN")}
         >
           <ThumbsDown className="h-4 w-4" />
@@ -110,6 +122,7 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
         <Button
           variant="ghost"
           size="icon"
+          disabled={bookmark.isPending}
           className={post.bookmarks[0] ? "text-blue-500" : ""}
           onClick={handleBookmark}
         >
@@ -118,11 +131,15 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
         <Button onClick={handleShare} variant="ghost" size="icon">
           <Share2 className="h-4 w-4" />
         </Button>
-        <Button asChild variant="ghost" size="icon">
-          <Link href={`/?p=${post.id}${q ? `&q=${q}` : ""}&comment=true`}>
-            <MessageSquare className="h-4 w-4" />
-            <span className="ml-1 text-xs">{post._count.comments}</span>
-          </Link>
+        <Button
+          onClick={async () => {
+            await setSearchParams({ p: post.id, comment: true, q: searchParams.q });
+          }}
+          variant="ghost"
+          size="icon"
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span className="ml-1 text-xs">{post._count.comments}</span>
         </Button>
       </div>
     </div>

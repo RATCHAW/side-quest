@@ -1,17 +1,24 @@
 "use client";
 
 import Image from "next/image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CommentSection } from "./comment-section";
 import { PostAction } from "../_components/post-actions";
 import type { PostsWithActions, PostWithDetails } from "@/server/api/routers/post";
-import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { api } from "@/trpc/react";
-import { useQueryState } from "nuqs";
+import { useQueryStates } from "nuqs";
 import { ResourcesSkeleton } from "./skeletons/resources-skeleton";
+import { postSearchParams } from "./search-params";
 
 const createIntialPostData = (post: PostsWithActions[number]): PostWithDetails => {
   return {
@@ -38,10 +45,14 @@ const createIntialPostData = (post: PostsWithActions[number]): PostWithDetails =
   };
 };
 
-export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] }) => {
-  const router = useRouter();
-  const [q] = useQueryState("q");
-  const [p] = useQueryState("p");
+export const PostDialog = ({
+  postInit,
+  children,
+}: {
+  postInit: PostsWithActions[number];
+  children: React.ReactNode;
+}) => {
+  const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
   const initialData = createIntialPostData(postInit);
 
   const { data: post, isFetching } = api.post.getById.useQuery(
@@ -50,22 +61,20 @@ export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] })
     },
     {
       initialData: initialData,
-      enabled: p === postInit.id,
-      staleTime: 0,
+      enabled: searchParams.p === postInit.id,
+      // staleTime: 0,
       refetchOnWindowFocus: false,
     },
   );
   const createAt = formatDistanceToNow(post.createdAt);
   return (
     <Dialog
-      open={p === postInit.id}
-      onOpenChange={(open) => {
-        if (!open) {
-          const query = q ? `?q=${encodeURIComponent(q)}` : "";
-          router.push(`/${query}`);
-        }
+      open={searchParams.p === postInit.id}
+      onOpenChange={async (open) => {
+        await setSearchParams({ p: open ? postInit.id : null });
       }}
     >
+      <DialogTrigger>{children}</DialogTrigger>
       <DialogContent className="max-h-[90vh] !max-w-5xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">{post.title}</DialogTitle>
@@ -115,7 +124,7 @@ export const PostDialog = ({ postInit }: { postInit: PostsWithActions[number] })
             </div>
           )}
 
-          <PostAction post={post} />
+          <PostAction post={postInit} />
         </div>
 
         <CommentSection

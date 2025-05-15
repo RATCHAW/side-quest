@@ -61,8 +61,9 @@ export const PostDialog = ({
     },
     {
       initialData: initialData,
+      initialDataUpdatedAt: postInit.updatedAt.getTime(),
       enabled: searchParams.p === postInit.id,
-      staleTime: 0,
+      refetchOnMount: true,
       refetchOnWindowFocus: false,
     },
   );
@@ -71,7 +72,7 @@ export const PostDialog = ({
     <Dialog
       open={searchParams.p === postInit.id}
       onOpenChange={async (open) => {
-        await setSearchParams({ p: open ? postInit.id : null });
+        await setSearchParams({ p: open ? postInit.id : null, comment: null });
       }}
     >
       <DialogTrigger>{children}</DialogTrigger>

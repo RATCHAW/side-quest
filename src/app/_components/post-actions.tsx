@@ -95,7 +95,7 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
       <div className="flex items-center space-x-1">
         <Button
           variant="ghost"
-          // size="icon"
+          size="icon"
           className={cn("", {
             "text-green-500": currentVote === "UP",
             "hover:text-green-500/50": currentVote !== "UP",
@@ -108,7 +108,6 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
         <Button
           variant="ghost"
           size="icon"
-          // className={currentVote === "DOWN" ? "text-red-500" : ""}
           className={cn("", {
             "text-red-500": currentVote === "DOWN",
             "hover:text-red-500/50": currentVote !== "DOWN",

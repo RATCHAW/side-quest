@@ -15,11 +15,17 @@ import { type User } from "better-auth";
 
 import { authClient } from "@/lib/auth-client";
 import { useMutation } from "@tanstack/react-query";
+import { api } from "@/trpc/react";
 
 export const ProfileDropdown = ({ user }: { user: User }) => {
+  const utils = api.useUtils();
+
   const { mutate: signOut, isPending } = useMutation({
     mutationKey: ["auth", "logout"],
     mutationFn: () => authClient.signOut(),
+    onSuccess: async () => {
+      await utils.post.all.invalidate();
+    },
   });
   return (
     <DropdownMenu>

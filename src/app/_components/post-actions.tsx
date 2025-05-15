@@ -4,18 +4,20 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PostsWithActions } from "@/server/api/routers/post";
 import { api } from "@/trpc/react";
-import type { Vote } from "@prisma/client";
+import type { PostBookmark, PostVote, Vote } from "@prisma/client";
 import { Bookmark, MessageSquare, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useQueryStates } from "nuqs";
 import { toast } from "sonner";
 import { postSearchParams } from "./search-params";
+import { authClient } from "@/lib/auth-client";
 
 export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
   const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
-
+  const session = authClient.useSession();
+  const isSignedIn = !!session.data?.user;
   const utils = api.useUtils();
 
-  const currentVote = post.votes[0]?.voteType;
+  const currentVote = post.votes?.length > 0 && post.votes[0]?.voteType;
 
   const vote = api.post.vote.useMutation({
     onMutate: async ({ postId, voteType }) => {
@@ -35,7 +37,7 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
                     ? item._count.votes + 1
                     : Math.max(0, item._count.votes - 1),
               },
-              votes: shouldRemoveVote ? [] : [{ voteType: voteType as Vote }],
+              votes: shouldRemoveVote ? [] : ([{ voteType: voteType as Vote }] as PostVote[]),
             };
           }
           return item;
@@ -54,11 +56,11 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
               ...item,
               bookmarks:
                 actionType === "ADD"
-                  ? [
+                  ? ([
                       {
                         createdAt: new Date(),
                       },
-                    ]
+                    ] as PostBookmark[])
                   : [],
             };
           }
@@ -69,6 +71,10 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
   });
 
   const handleBookmark = () => {
+    if (!isSignedIn) {
+      toast.error("You need to be signed in to bookmark a post");
+      return;
+    }
     if (post.bookmarks.length > 0) {
       bookmark.mutate({ postId: post.id, actionType: "REMOVE" });
     } else {
@@ -77,6 +83,10 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
   };
 
   const handleVote = (voteType: "UP" | "DOWN") => {
+    if (!isSignedIn) {
+      toast.error("You need to be signed in to vote on a post");
+      return;
+    }
     vote.mutate({
       postId: post.id,
       voteType: voteType,
@@ -122,7 +132,7 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
           variant="ghost"
           size="icon"
           disabled={bookmark.isPending}
-          className={post.bookmarks[0] ? "text-blue-500" : ""}
+          className={post.bookmarks?.length > 0 && post.bookmarks[0] ? "text-blue-500" : ""}
           onClick={handleBookmark}
         >
           <Bookmark className="h-4 w-4" />

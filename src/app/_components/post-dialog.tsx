@@ -62,7 +62,7 @@ export const PostDialog = ({
     {
       initialData: initialData,
       enabled: searchParams.p === postInit.id,
-      // staleTime: 0,
+      staleTime: 0,
       refetchOnWindowFocus: false,
     },
   );

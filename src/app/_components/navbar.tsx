@@ -10,8 +10,6 @@ import { SignInDialog } from "./signin-dialog";
 export function Navbar() {
   const [q, setQ] = useQueryState("q", {
     defaultValue: "",
-    shallow: false,
-    throttleMs: 500,
   });
 
   const { data } = authClient.useSession();

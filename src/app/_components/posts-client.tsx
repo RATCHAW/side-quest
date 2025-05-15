@@ -12,7 +12,7 @@ import { PostsSkeleton } from "./skeletons/posts-skeleton";
 export const PostsClient = () => {
   const [q] = useQueryState("q");
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfinitePosts({ query: q });
+  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } = useInfinitePosts({ query: q });
 
   const { ref } = useInView({
     threshold: 1,
@@ -31,9 +31,11 @@ export const PostsClient = () => {
         {posts.map((post) => (
           <PostCard query={q ?? undefined} key={post.id} post={post} />
         ))}
-      </div>
-      <div ref={ref} className="py-8 text-center text-gray-500">
-        {isFetchingNextPage ? <PostsSkeleton /> : hasNextPage ? "Scroll down to load more" : null}
+        {isFetchingNextPage || isFetching ? (
+          <PostsSkeleton />
+        ) : hasNextPage ? (
+          <div ref={ref}>Scroll down to load more</div>
+        ) : null}
       </div>
       <div>
         {posts.length === 0 && (

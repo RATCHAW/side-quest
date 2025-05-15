@@ -10,8 +10,9 @@ import { useQueryStates } from "nuqs";
 import { toast } from "sonner";
 import { postSearchParams } from "./search-params";
 import { authClient } from "@/lib/auth-client";
+import { LIMIT } from "@/hooks/use-infinite-posts";
 
-export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
+export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }) => {
   const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
   const session = authClient.useSession();
   const isSignedIn = !!session.data?.user;
@@ -22,50 +23,55 @@ export const PostAction = ({ post }: { post: PostsWithActions[number] }) => {
   const vote = api.post.vote.useMutation({
     onMutate: async ({ postId, voteType }) => {
       const shouldRemoveVote = currentVote === voteType;
-
-      utils.post.all.setData({ q: searchParams.q ?? undefined }, (oldData) => {
+      utils.post.all.setInfiniteData({ q: searchParams.q ?? undefined, limit: LIMIT }, (oldData) => {
         if (!oldData) return oldData;
-        return oldData.map((item) => {
-          if (item.id === postId) {
-            return {
-              ...item,
-              _count: {
-                ...item._count,
-                votes: shouldRemoveVote
-                  ? Math.max(0, item._count.votes - 1)
-                  : voteType === "UP"
-                    ? item._count.votes + 1
-                    : Math.max(0, item._count.votes - 1),
-              },
-              votes: shouldRemoveVote ? [] : ([{ voteType: voteType as Vote }] as PostVote[]),
-            };
-          }
-          return item;
-        });
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            posts: page.posts.map((post) => {
+              if (post.id === postId) {
+                return {
+                  ...post,
+                  _count: {
+                    ...post._count,
+                    votes: shouldRemoveVote
+                      ? Math.max(0, post._count.votes - 1)
+                      : voteType === "UP"
+                        ? post._count.votes + 1
+                        : Math.max(0, post._count.votes - 1),
+                  },
+                  votes: shouldRemoveVote ? [] : ([{ voteType: voteType as Vote }] as PostVote[]),
+                };
+              }
+              return post;
+            }),
+          })),
+        };
       });
     },
   });
 
   const bookmark = api.post.bookmark.useMutation({
     onMutate: async ({ postId, actionType }) => {
-      utils.post.all.setData({ q: searchParams.q ?? undefined }, (oldData) => {
+      utils.post.all.setInfiniteData({ q: searchParams.q ?? undefined, limit: LIMIT }, (oldData) => {
         if (!oldData) return oldData;
-        return oldData.map((item) => {
-          if (item.id === postId) {
-            return {
-              ...item,
-              bookmarks:
-                actionType === "ADD"
-                  ? ([
-                      {
-                        createdAt: new Date(),
-                      },
-                    ] as PostBookmark[])
-                  : [],
-            };
-          }
-          return item;
-        });
+
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            posts: page.posts.map((item) => {
+              if (item.id === postId) {
+                return {
+                  ...item,
+                  bookmarks: actionType === "ADD" ? ([{ createdAt: new Date() }] as PostBookmark[]) : [],
+                };
+              }
+              return item;
+            }),
+          })),
+        };
       });
     },
   });

@@ -5,7 +5,7 @@ import { PostAction } from "./post-actions";
 import { PostDialog } from "./post-dialog";
 
 interface PostCardProps {
-  post: PostsWithActions[number];
+  post: PostsWithActions["posts"][number];
   query?: string;
 }
 

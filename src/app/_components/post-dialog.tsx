@@ -20,7 +20,7 @@ import { useQueryStates } from "nuqs";
 import { ResourcesSkeleton } from "./skeletons/resources-skeleton";
 import { postSearchParams } from "./search-params";
 
-const createIntialPostData = (post: PostsWithActions[number]): PostWithDetails => {
+const createIntialPostData = (post: PostsWithActions["posts"][number]): PostWithDetails => {
   return {
     id: post.id,
     title: post.title,
@@ -49,7 +49,7 @@ export const PostDialog = ({
   postInit,
   children,
 }: {
-  postInit: PostsWithActions[number];
+  postInit: PostsWithActions["posts"][number];
   children: React.ReactNode;
 }) => {
   const [searchParams, setSearchParams] = useQueryStates(postSearchParams);

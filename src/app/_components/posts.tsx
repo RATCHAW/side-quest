@@ -1,8 +1,9 @@
 import { api, HydrateClient } from "@/trpc/server";
 import { PostsClient } from "./posts-client";
+import { LIMIT } from "@/hooks/use-infinite-posts";
 
 export const Posts = async ({ q }: { q: string | null }) => {
-  await api.post.all.prefetch({ q: q ?? undefined });
+  await api.post.all.prefetchInfinite({ q: q ?? undefined, limit: LIMIT });
   return (
     <HydrateClient>
       <PostsClient />

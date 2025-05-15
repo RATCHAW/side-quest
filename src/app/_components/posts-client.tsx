@@ -5,21 +5,38 @@ import { PostCard } from "./post-card";
 import { useQueryState } from "nuqs";
 import { NewPostDialog } from "./new-post";
 import { Lightbulb } from "lucide-react";
+import { useInfinitePosts } from "@/hooks/use-infinite-posts";
+import { useInView } from "react-intersection-observer";
+import { PostsSkeleton } from "./skeletons/posts-skeleton";
 
 export const PostsClient = () => {
   const [q] = useQueryState("q");
 
-  const [posts] = api.post.all.useSuspenseQuery({
-    q: q ?? undefined,
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfinitePosts({ query: q });
+
+  const { ref } = useInView({
+    threshold: 1,
+    onChange: (inView) => {
+      if (inView && hasNextPage && !isFetchingNextPage) {
+        void fetchNextPage();
+      }
+    },
   });
+
+  const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
     <div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {posts?.map((post) => <PostCard query={q ?? undefined} key={post.id} post={post} />)}
+        {posts.map((post) => (
+          <PostCard query={q ?? undefined} key={post.id} post={post} />
+        ))}
+      </div>
+      <div ref={ref} className="py-8 text-center text-gray-500">
+        {isFetchingNextPage ? <PostsSkeleton /> : hasNextPage ? "Scroll down to load more" : null}
       </div>
       <div>
-        {posts?.length === 0 && (
+        {posts.length === 0 && (
           <div className="bg-background my-8 flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 p-12 text-center shadow-sm">
             <div className="mb-4 rounded-full border p-4">
               <Lightbulb className="text-yellow-200" />

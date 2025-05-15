@@ -83,13 +83,34 @@ export const postRouter = createTRPCRouter({
     .input(
       z.object({
         q: z.string().optional(),
+        limit: z.number().min(1).max(100).default(10),
+
+        cursor: z.string().nullish(), // Use post.id as cursor
       }),
     )
     .query(async ({ ctx, input }) => {
+      const { limit, cursor, q } = input;
+
       const posts = await ctx.db.post.findMany({
+        take: limit + 1,
+        cursor: cursor ? { id: cursor } : undefined,
+        skip: cursor ? 1 : 0,
+        orderBy: [
+          {
+            createdAt: "desc",
+          },
+          {
+            votes: {
+              _count: "desc",
+            },
+          },
+          {
+            id: "desc",
+          },
+        ],
         where: {
           title: {
-            contains: input.q,
+            contains: q,
           },
         },
         include: {
@@ -132,7 +153,12 @@ export const postRouter = createTRPCRouter({
             : undefined,
         },
       });
-      return posts;
+      const nextCursor = posts.length > limit ? posts.pop()?.id : null;
+
+      return {
+        posts,
+        nextCursor,
+      };
     }),
 
   create: protectedProcedure.input(newPostSchema).mutation(async ({ ctx, input }) => {

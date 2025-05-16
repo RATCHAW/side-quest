@@ -84,8 +84,7 @@ export const postRouter = createTRPCRouter({
       z.object({
         q: z.string().optional(),
         limit: z.number().min(1).max(100).default(10),
-
-        cursor: z.string().nullish(), // Use post.id as cursor
+        cursor: z.string().nullish(),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -97,12 +96,12 @@ export const postRouter = createTRPCRouter({
         skip: cursor ? 1 : 0,
         orderBy: [
           {
-            createdAt: "desc",
-          },
-          {
             votes: {
               _count: "desc",
             },
+          },
+          {
+            createdAt: "desc",
           },
           {
             id: "desc",
@@ -173,6 +172,45 @@ export const postRouter = createTRPCRouter({
             data: input.resources,
           },
         },
+      },
+      include: {
+        _count: {
+          select: {
+            votes: {
+              where: {
+                voteType: "UP",
+              },
+            },
+            resources: true,
+            comments: true,
+          },
+        },
+        user: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
+        bookmarks: ctx.session?.user.id
+          ? {
+              where: {
+                userId: ctx.session?.user.id,
+              },
+              select: {
+                createdAt: true,
+              },
+            }
+          : undefined,
+        votes: ctx.session?.user.id
+          ? {
+              where: {
+                userId: ctx.session?.user.id,
+              },
+              select: {
+                voteType: true,
+              },
+            }
+          : undefined,
       },
     });
   }),

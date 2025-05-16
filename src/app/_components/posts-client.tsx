@@ -1,6 +1,5 @@
 "use client";
 
-import { api } from "@/trpc/react";
 import { PostCard } from "./post-card";
 import { useQueryState } from "nuqs";
 import { NewPostDialog } from "./new-post";
@@ -31,11 +30,7 @@ export const PostsClient = () => {
         {posts.map((post) => (
           <PostCard query={q ?? undefined} key={post.id} post={post} />
         ))}
-        {isFetchingNextPage || isFetching ? (
-          <PostsSkeleton />
-        ) : hasNextPage ? (
-          <div ref={ref}>Scroll down to load more</div>
-        ) : null}
+        {isFetchingNextPage || isFetching ? <PostsSkeleton /> : hasNextPage ? <div ref={ref}></div> : null}
       </div>
       <div>
         {posts.length === 0 && (

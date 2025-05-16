@@ -10,28 +10,31 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/melecules/file-upload";
 import { useFileUpload } from "@/hooks/use-file-upload";
-import { CirclePlus, X } from "lucide-react";
+import { CirclePlus, Loader, X } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { newPostSchema } from "@/validation/post";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { upload } from "@imagekit/next";
 import { Progress } from "@/components/ui/progress";
 import { env } from "@/env";
+import { useQueryStates } from "nuqs";
+import { postSearchParams } from "./search-params";
+import { LIMIT } from "@/hooks/use-infinite-posts";
 
 type FormValues = z.infer<typeof newPostSchema>;
 
 export function NewPostDialog() {
   const [open, setOpen] = useState(false);
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
-  const router = useRouter();
+  const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
+
+  const utils = api.useUtils();
 
   const uploadAuth = api.upload.getAuthCredentials.useQuery(undefined, {
-    staleTime: 1000 * 60 * 5, // Consider credentials stale after 5 minutes
-    retry: 2, // Retry failed requests up to 2 times
-    enabled: false, // Don't fetch on component mount
+    staleTime: 1000 * 60,
+    enabled: false,
   });
   const { mutateAsync: uploadFileAsync } = useMutation({
     mutationFn: async (file: File) => {
@@ -69,16 +72,22 @@ export function NewPostDialog() {
 
   const createPost = api.post.create.useMutation({
     onSuccess: async (data) => {
+      utils.post.all.setInfiniteData({ q: searchParams.q ?? undefined, limit: LIMIT }, (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            posts: [data, ...page.posts],
+          })),
+        };
+      });
       setOpen(false);
       form.reset();
       setImageUploadProgress(0);
       uploadActions.clearFiles();
-      toast("Idea has been created", {
-        action: {
-          label: "View",
-          onClick: () => router.push(`/?p=${data.id}`),
-        },
-      });
+      toast.success("Idea has been created");
+      await setSearchParams({ p: data.id });
     },
   });
 
@@ -103,7 +112,12 @@ export function NewPostDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        setOpen(open);
+      }}
+    >
       <DialogTrigger asChild>
         <Button>
           <CirclePlus /> <span className="max-md:hidden">Share New Idea</span>
@@ -161,7 +175,7 @@ export function NewPostDialog() {
               )}
 
               {fields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2">
+                <div key={field.id} className="flex gap-2">
                   <FormField
                     control={form.control}
                     name={`resources.${index}.title`}
@@ -200,7 +214,9 @@ export function NewPostDialog() {
               ))}
             </div>
 
-            <Button type="submit">Submit</Button>
+            <Button disabled={createPost.isPending} type="submit">
+              {createPost.isPending && <Loader className="animate-spin" />} Post
+            </Button>
           </form>
         </Form>
       </DialogContent>

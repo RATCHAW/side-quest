@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { postSearchParams } from "./search-params";
 import { authClient } from "@/lib/auth-client";
 import { LIMIT } from "@/hooks/use-infinite-posts";
+import { calculateVotesCount } from "./votes-count";
 
 export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }) => {
   const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
@@ -18,11 +19,12 @@ export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }
   const isSignedIn = !!session.data?.user;
   const utils = api.useUtils();
 
-  const currentVote = post.votes?.length > 0 && post.votes[0]?.voteType;
+  const userCurrentVote = post.votes?.length > 0 && post.votes[0]?.voteType;
 
   const vote = api.post.vote.useMutation({
     onMutate: async ({ postId, voteType }) => {
-      const shouldRemoveVote = currentVote === voteType;
+      const shouldRemoveVote = userCurrentVote === voteType;
+
       utils.post.all.setInfiniteData({ q: searchParams.q ?? undefined, limit: LIMIT }, (oldData) => {
         if (!oldData) return oldData;
         return {
@@ -35,11 +37,11 @@ export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }
                   ...post,
                   _count: {
                     ...post._count,
-                    votes: shouldRemoveVote
-                      ? Math.max(0, post._count.votes - 1)
-                      : voteType === "UP"
-                        ? post._count.votes + 1
-                        : Math.max(0, post._count.votes - 1),
+                    votes: calculateVotesCount({
+                      currentVoteCount: post._count.votes,
+                      userCurrentVote,
+                      voteType: voteType as Vote,
+                    }),
                   },
                   votes: shouldRemoveVote ? [] : ([{ voteType: voteType as Vote }] as PostVote[]),
                 };
@@ -113,8 +115,8 @@ export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }
           variant="ghost"
           size="icon"
           className={cn("", {
-            "text-green-500": currentVote === "UP",
-            "hover:text-green-500/50": currentVote !== "UP",
+            "text-green-500": userCurrentVote === "UP",
+            "hover:text-green-500/50": userCurrentVote !== "UP",
           })}
           onClick={() => handleVote("UP")}
         >
@@ -125,8 +127,8 @@ export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }
           variant="ghost"
           size="icon"
           className={cn("", {
-            "text-red-500": currentVote === "DOWN",
-            "hover:text-red-500/50": currentVote !== "DOWN",
+            "text-red-500": userCurrentVote === "DOWN",
+            "hover:text-red-500/50": userCurrentVote !== "DOWN",
           })}
           onClick={() => handleVote("DOWN")}
         >

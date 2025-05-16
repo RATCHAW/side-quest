@@ -2,10 +2,7 @@
 
 import { AlertCircleIcon, ImageUpIcon, XIcon } from "lucide-react";
 
-import {
-  type FileUploadActions,
-  type FileUploadState,
-} from "@/hooks/use-file-upload";
+import { type FileUploadActions, type FileUploadState } from "@/hooks/use-file-upload";
 import Image from "next/image";
 
 export const FileUpload = ({
@@ -17,15 +14,7 @@ export const FileUpload = ({
 }) => {
   const [
     { files, isDragging, errors },
-    {
-      handleDragEnter,
-      handleDragLeave,
-      handleDragOver,
-      handleDrop,
-      openFileDialog,
-      removeFile,
-      getInputProps,
-    },
+    { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, removeFile, getInputProps },
   ] = fileUpload;
 
   const previewUrl = files[0]?.preview ?? null;
@@ -44,11 +33,7 @@ export const FileUpload = ({
           data-dragging={isDragging || undefined}
           className="border-input hover:bg-accent/50 data-[dragging=true]:bg-accent/50 has-[input:focus]:border-ring has-[input:focus]:ring-ring/50 relative flex min-h-52 flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed p-4 transition-colors has-disabled:pointer-events-none has-disabled:opacity-50 has-[img]:border-none has-[input:focus]:ring-[3px]"
         >
-          <input
-            {...getInputProps()}
-            className="sr-only"
-            aria-label="Upload file"
-          />
+          <input {...getInputProps()} className="sr-only" aria-label="Upload file" />
           {previewUrl ? (
             <div className="absolute inset-0">
               <Image
@@ -67,12 +52,8 @@ export const FileUpload = ({
               >
                 <ImageUpIcon className="size-4 opacity-60" />
               </div>
-              <p className="mb-1.5 text-sm font-medium">
-                Drop your image here or click to browse
-              </p>
-              <p className="text-muted-foreground text-xs">
-                Max size: {maxSizeMB}MB
-              </p>
+              <p className="mb-1.5 text-sm font-medium">Drop your image here or click to browse</p>
+              <p className="text-muted-foreground text-xs">Max size: {maxSizeMB}MB</p>
             </div>
           )}
         </div>
@@ -91,28 +72,11 @@ export const FileUpload = ({
       </div>
 
       {errors.length > 0 && (
-        <div
-          className="text-destructive flex items-center gap-1 text-xs"
-          role="alert"
-        >
+        <div className="text-destructive flex items-center gap-1 text-xs" role="alert">
           <AlertCircleIcon className="size-3 shrink-0" />
           <span>{errors[0]}</span>
         </div>
       )}
-
-      <p
-        aria-live="polite"
-        role="region"
-        className="text-muted-foreground mt-2 text-center text-xs"
-      >
-        Single image uploader w/ max size ∙{" "}
-        <a
-          href="https://github.com/origin-space/originui/tree/main/docs/use-file-upload.md"
-          className="hover:text-foreground underline"
-        >
-          API
-        </a>
-      </p>
     </div>
   );
 };

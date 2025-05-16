@@ -8,6 +8,7 @@ export function useInfinitePosts({ query }: { query: string | null }) {
 
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      staleTime: Infinity,
     },
   );
 }

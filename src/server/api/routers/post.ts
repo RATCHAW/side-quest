@@ -50,23 +50,27 @@ export const postRouter = createTRPCRouter({
             },
           },
         },
-        bookmarks: {
-          where: {
-            userId: ctx.session?.user.id,
-          },
-          select: {
-            createdAt: true,
-          },
-        },
         resources: true,
-        votes: {
-          where: {
-            userId: ctx.session?.user.id,
-          },
-          select: {
-            voteType: true,
-          },
-        },
+        bookmarks: ctx.session?.user.id
+          ? {
+              where: {
+                userId: ctx.session?.user.id,
+              },
+              select: {
+                createdAt: true,
+              },
+            }
+          : undefined,
+        votes: ctx.session?.user.id
+          ? {
+              where: {
+                userId: ctx.session?.user.id,
+              },
+              select: {
+                voteType: true,
+              },
+            }
+          : undefined,
       },
     });
     if (!post) {

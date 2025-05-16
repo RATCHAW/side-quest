@@ -102,7 +102,7 @@ export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }
   };
 
   const handleShare = async () => {
-    await navigator.clipboard.writeText(window.location.href);
+    await navigator.clipboard.writeText(window.location.href + `/posts/${post.id}`);
     toast.success("Link copied to clipboard", {
       position: "bottom-center",
     });
@@ -150,7 +150,7 @@ export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }
         </Button>
         <Button
           onClick={async () => {
-            await setSearchParams({ p: post.id, comment: true, q: searchParams.q });
+            await setSearchParams({ comment: true, q: searchParams.q });
           }}
           variant="ghost"
           size="icon"

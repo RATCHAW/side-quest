@@ -19,6 +19,7 @@ import { api } from "@/trpc/react";
 import { useQueryStates } from "nuqs";
 import { ResourcesSkeleton } from "./skeletons/resources-skeleton";
 import { postSearchParams } from "./search-params";
+import { useState } from "react";
 
 const createIntialPostData = (post: PostsWithActions["posts"][number]): PostWithDetails => {
   return {
@@ -52,8 +53,9 @@ export const PostDialog = ({
   postInit: PostsWithActions["posts"][number];
   children: React.ReactNode;
 }) => {
-  const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
+  const [_searchParams, setSearchParams] = useQueryStates(postSearchParams);
   const initialData = createIntialPostData(postInit);
+  const [isOpen, setIsOpen] = useState(false);
 
   const { data: post, isFetching } = api.post.getById.useQuery(
     {
@@ -62,7 +64,7 @@ export const PostDialog = ({
     {
       initialData: initialData,
       initialDataUpdatedAt: postInit.updatedAt.getTime(),
-      enabled: searchParams.p === postInit.id,
+      enabled: isOpen,
       refetchOnMount: true,
       refetchOnWindowFocus: false,
     },
@@ -70,9 +72,9 @@ export const PostDialog = ({
   const createAt = formatDistanceToNow(post.createdAt);
   return (
     <Dialog
-      open={searchParams.p === postInit.id}
       onOpenChange={async (open) => {
-        await setSearchParams({ p: open ? postInit.id : null, comment: null });
+        setIsOpen(open);
+        await setSearchParams({ comment: null });
       }}
     >
       <DialogTrigger>{children}</DialogTrigger>

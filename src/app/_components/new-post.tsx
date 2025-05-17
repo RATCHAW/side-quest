@@ -23,6 +23,7 @@ import { useQueryStates } from "nuqs";
 import { postSearchParams } from "./search-params";
 import { LIMIT } from "@/hooks/use-infinite-posts";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
 
 type FormValues = z.infer<typeof newPostSchema>;
 
@@ -31,6 +32,7 @@ export function NewPostDialog() {
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [searchParams] = useQueryStates(postSearchParams);
   const router = useRouter();
+  const { data: userSession } = useSession();
 
   const utils = api.useUtils();
 
@@ -108,6 +110,10 @@ export function NewPostDialog() {
   });
 
   async function onSubmit(values: FormValues) {
+    if (!userSession?.user) {
+      toast.error("You must be logged in to create a post");
+      return;
+    }
     let imageUrl: string | undefined = undefined;
     if (state.files[0]?.file) {
       const data = await uploadFileAsync(state.files[0]?.file as File);

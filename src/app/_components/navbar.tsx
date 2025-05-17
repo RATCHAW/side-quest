@@ -10,6 +10,7 @@ import { SignInDialog } from "./signin-dialog";
 export function Navbar() {
   const [q, setQ] = useQueryState("q", {
     defaultValue: "",
+    throttleMs: 300,
   });
 
   const { data } = useSession();

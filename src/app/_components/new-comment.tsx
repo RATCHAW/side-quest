@@ -12,6 +12,8 @@ import type { Post, PostComment } from "@prisma/client";
 import { useSession } from "@/lib/auth-client";
 import { parseAsBoolean, useQueryState } from "nuqs";
 import { useEffect } from "react";
+import { toast } from "sonner";
+import { Loader } from "lucide-react";
 
 export const NewComment = ({
   postId,
@@ -45,20 +47,24 @@ export const NewComment = ({
       });
     },
   });
+  const { data: userSession } = useSession();
 
   const onSubmit = (data: NewPostComment) => {
+    if (!userSession) {
+      toast.error("You must be logged in to comment");
+      return;
+    }
     createComment.mutate({
       content: data.content,
       postId: postId,
       parentId: parentId,
     });
   };
-  const { data } = useSession();
   return (
     <div className="flex gap-4">
       <Avatar>
-        <AvatarImage src={data?.user.image || undefined} alt={data?.user.name} />
-        <AvatarFallback>{data?.user.name.charAt(0)}</AvatarFallback>
+        <AvatarImage src={userSession?.user.image || undefined} alt={userSession?.user.name} />
+        <AvatarFallback>{userSession?.user.name.charAt(0)}</AvatarFallback>
       </Avatar>
       <div className="flex-1 items-end space-y-2">
         <Form {...form}>
@@ -81,7 +87,10 @@ export const NewComment = ({
                 </FormItem>
               )}
             />
-            <Button>Post Comment</Button>
+            <Button disabled={createComment.isPending}>
+              {createComment.isPending && <Loader className="animate-spin" />}
+              Post Comment
+            </Button>
           </form>
         </Form>
       </div>

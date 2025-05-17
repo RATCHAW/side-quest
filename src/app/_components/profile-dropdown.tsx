@@ -24,6 +24,7 @@ export const ProfileDropdown = ({ user }: { user: User }) => {
     mutationKey: ["auth", "logout"],
     mutationFn: () => authClient.signOut(),
     onSuccess: async () => {
+      await utils.invalidate(undefined, { queryKey: ["session"] });
       await utils.post.all.invalidate();
     },
   });

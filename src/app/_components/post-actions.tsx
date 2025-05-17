@@ -39,8 +39,8 @@ export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }
                     ...post._count,
                     votes: calculateVotesCount({
                       currentVoteCount: post._count.votes,
-                      userCurrentVote,
-                      voteType: voteType as Vote,
+                      userCurrentVote: post.votes?.[0]?.voteType,
+                      voteType,
                     }),
                   },
                   votes: shouldRemoveVote ? [] : ([{ voteType: voteType as Vote }] as PostVote[]),
@@ -95,9 +95,10 @@ export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }
       toast.error("You need to be signed in to vote on a post");
       return;
     }
+
     vote.mutate({
       postId: post.id,
-      voteType: voteType,
+      voteType: userCurrentVote === voteType ? "REMOVE" : voteType,
     });
   };
 

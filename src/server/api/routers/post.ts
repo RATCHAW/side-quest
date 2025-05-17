@@ -2,77 +2,84 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc";
 import { newPostSchema } from "@/validation/post";
 import { TRPCError, type inferRouterOutputs } from "@trpc/server";
+import { Prisma, type PostVote } from "@prisma/client";
 
 export const postRouter = createTRPCRouter({
   getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
-    const post = await ctx.db.post.findUnique({
-      where: {
-        id: input.id,
-      },
-      include: {
-        _count: {
-          select: {
-            votes: {
-              where: {
-                voteType: "UP",
-              },
-            },
-            comments: true,
-            resources: true,
-          },
+    const [post, downVotesCount] = await ctx.db.$transaction(async (tx) => [
+      await tx.post.findUnique({
+        where: {
+          id: input.id,
         },
-        user: {
-          select: {
-            name: true,
-            image: true,
-          },
-        },
-        comments: {
-          where: {
-            parentCommentId: null,
-          },
-          include: {
-            user: {
-              select: {
-                name: true,
-                image: true,
+        include: {
+          _count: {
+            select: {
+              votes: {
+                where: {
+                  voteType: "UP",
+                },
               },
+              comments: true,
+              resources: true,
             },
-            replies: {
-              include: {
-                user: {
-                  select: {
-                    name: true,
-                    image: true,
+          },
+          user: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+          comments: {
+            where: {
+              parentCommentId: null,
+            },
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  image: true,
+                },
+              },
+              replies: {
+                include: {
+                  user: {
+                    select: {
+                      name: true,
+                      image: true,
+                    },
                   },
                 },
               },
             },
           },
+          resources: true,
+          bookmarks: ctx.session?.user.id
+            ? {
+                where: {
+                  userId: ctx.session?.user.id,
+                },
+                select: {
+                  createdAt: true,
+                },
+              }
+            : undefined,
+          votes: ctx.session?.user.id
+            ? {
+                where: {
+                  userId: ctx.session?.user.id,
+                },
+              }
+            : undefined,
         },
-        resources: true,
-        bookmarks: ctx.session?.user.id
-          ? {
-              where: {
-                userId: ctx.session?.user.id,
-              },
-              select: {
-                createdAt: true,
-              },
-            }
-          : undefined,
-        votes: ctx.session?.user.id
-          ? {
-              where: {
-                userId: ctx.session?.user.id,
-              },
-              select: {
-                voteType: true,
-              },
-            }
-          : undefined,
-      },
-    });
+      }),
+      await tx.postVote.count({
+        where: {
+          postId: input.id,
+          voteType: "DOWN",
+        },
+      }),
+    ]);
+
     if (!post) {
       throw new TRPCError({
         code: "NOT_FOUND",
@@ -80,14 +87,20 @@ export const postRouter = createTRPCRouter({
         message: `Post with id '${input.id}' not found`,
       });
     }
-    return post;
+    return {
+      ...post,
+      _count: {
+        ...post._count,
+        votes: post._count.votes - downVotesCount,
+      },
+    };
   }),
 
   all: publicProcedure
     .input(
       z.object({
         q: z.string().optional(),
-        limit: z.number().min(1).max(100).default(10),
+        limit: z.number().min(1).max(20).default(10),
         cursor: z.string().nullish(),
       }),
     )
@@ -119,11 +132,6 @@ export const postRouter = createTRPCRouter({
         include: {
           _count: {
             select: {
-              votes: {
-                where: {
-                  voteType: "UP",
-                },
-              },
               resources: true,
               comments: true,
             },
@@ -144,22 +152,36 @@ export const postRouter = createTRPCRouter({
                 },
               }
             : undefined,
-          votes: ctx.session?.user.id
-            ? {
-                where: {
-                  userId: ctx.session?.user.id,
-                },
-                select: {
-                  voteType: true,
-                },
-              }
-            : undefined,
+          votes: true,
         },
+      });
+      const postsWithVoteCount = posts.map((post) => {
+        let votesCount = 0;
+        post.votes.forEach((vote) => {
+          if (vote.voteType === "UP") {
+            votesCount++;
+          } else {
+            votesCount--;
+          }
+        });
+        let userVote: PostVote[] = [];
+        if (ctx.session?.user.id) {
+          const foundVote = post.votes.find((vote) => vote.userId === ctx.session?.user.id);
+          userVote = foundVote ? [foundVote] : [];
+        }
+        return {
+          ...post,
+          votes: userVote,
+          _count: {
+            ...post._count,
+            votes: votesCount,
+          },
+        };
       });
       const nextCursor = posts.length > limit ? posts.pop()?.id : null;
 
       return {
-        posts,
+        posts: postsWithVoteCount,
         nextCursor,
       };
     }),

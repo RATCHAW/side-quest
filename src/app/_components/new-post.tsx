@@ -22,13 +22,15 @@ import { env } from "@/env";
 import { useQueryStates } from "nuqs";
 import { postSearchParams } from "./search-params";
 import { LIMIT } from "@/hooks/use-infinite-posts";
+import { useRouter } from "next/navigation";
 
 type FormValues = z.infer<typeof newPostSchema>;
 
 export function NewPostDialog() {
   const [open, setOpen] = useState(false);
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
-  const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
+  const [searchParams] = useQueryStates(postSearchParams);
+  const router = useRouter();
 
   const utils = api.useUtils();
 
@@ -86,8 +88,14 @@ export function NewPostDialog() {
       form.reset();
       setImageUploadProgress(0);
       uploadActions.clearFiles();
-      toast.success("Idea has been created");
-      await setSearchParams({ p: data.id });
+      toast.success("Idea has been created", {
+        action: {
+          label: "View",
+          onClick: () => {
+            router.push(`/posts/${data.id}`);
+          },
+        },
+      });
     },
   });
 

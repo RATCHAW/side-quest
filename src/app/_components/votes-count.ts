@@ -2,32 +2,27 @@ import type { Vote } from "@prisma/client";
 
 interface VotesCountProps {
   currentVoteCount: number;
-  userCurrentVote: false | Vote | undefined;
-  voteType: Vote;
+  userCurrentVote: Vote | undefined;
+  voteType: "UP" | "DOWN" | "REMOVE";
 }
 
 export const calculateVotesCount = ({ currentVoteCount, userCurrentVote, voteType }: VotesCountProps) => {
-  const shouldRemoveVote = userCurrentVote === voteType;
-  const voteCase = shouldRemoveVote
-    ? `remove_${userCurrentVote}`
-    : userCurrentVote
-      ? `change_${userCurrentVote}_to_${voteType}`
-      : `add_${voteType}`;
-
-  switch (voteCase) {
-    case "remove_UP":
-      return Math.max(0, currentVoteCount - 1);
-    case "remove_DOWN":
-      return currentVoteCount + 1;
-    case "change_UP_to_DOWN":
-      return Math.max(0, currentVoteCount - 2);
-    case "change_DOWN_to_UP":
-      return currentVoteCount + 2;
-    case "add_UP":
-      return currentVoteCount + 1;
-    case "add_DOWN":
-      return Math.max(0, currentVoteCount - 1);
-    default:
-      return currentVoteCount;
+  let count = currentVoteCount;
+  if (voteType === "REMOVE") {
+    count = userCurrentVote === "UP" ? count - 1 : count + 1;
+  } else if (voteType === "UP") {
+    // count = count + 2;
+    if (userCurrentVote === "DOWN") {
+      count = count + 2;
+    } else {
+      count = count + 1;
+    }
+  } else if (voteType === "DOWN") {
+    if (userCurrentVote === "UP") {
+      count = count - 2;
+    } else {
+      count = count - 1;
+    }
   }
+  return count;
 };

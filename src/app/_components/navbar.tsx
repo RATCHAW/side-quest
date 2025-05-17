@@ -3,7 +3,7 @@
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ProfileDropdown } from "./profile-dropdown";
-import { authClient } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { NewPostDialog } from "./new-post";
 import { useQueryState } from "nuqs";
 import { SignInDialog } from "./signin-dialog";
@@ -12,7 +12,7 @@ export function Navbar() {
     defaultValue: "",
   });
 
-  const { data } = authClient.useSession();
+  const { data } = useSession();
   return (
     <header className="sticky top-0 z-10 border-b">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">

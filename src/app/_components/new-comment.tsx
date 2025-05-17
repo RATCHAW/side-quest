@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { newPostCommentSchema, type NewPostComment } from "@/validation/post";
 import { api } from "@/trpc/react";
 import type { Post, PostComment } from "@prisma/client";
-import { authClient } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { parseAsBoolean, useQueryState } from "nuqs";
 import { useEffect } from "react";
 
@@ -53,7 +53,7 @@ export const NewComment = ({
       parentId: parentId,
     });
   };
-  const { data } = authClient.useSession();
+  const { data } = useSession();
   return (
     <div className="flex gap-4">
       <Avatar>

@@ -9,13 +9,13 @@ import { Bookmark, MessageSquare, Share2, ThumbsDown, ThumbsUp } from "lucide-re
 import { useQueryStates } from "nuqs";
 import { toast } from "sonner";
 import { postSearchParams } from "./search-params";
-import { authClient } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { LIMIT } from "@/hooks/use-infinite-posts";
 import { calculateVotesCount } from "./votes-count";
 
 export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }) => {
   const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
-  const session = authClient.useSession();
+  const session = useSession();
   const isSignedIn = !!session.data?.user;
   const utils = api.useUtils();
 

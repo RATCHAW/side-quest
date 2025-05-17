@@ -17,18 +17,26 @@ import { authClient } from "@/lib/auth-client";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/trpc/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export const ProfileDropdown = ({ user }: { user: User }) => {
   const utils = api.useUtils();
+  const router = useRouter();
 
   const { mutate: signOut, isPending } = useMutation({
     mutationKey: ["auth", "logout"],
     mutationFn: () => authClient.signOut(),
     onSuccess: async () => {
-      await utils.invalidate(undefined, { queryKey: ["session"] });
       await utils.post.all.invalidate();
+      await utils.invalidate(undefined, { queryKey: ["session"] });
     },
   });
+
+  const onSignOutClick = () => {
+    router.push("/");
+    signOut();
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -60,7 +68,7 @@ export const ProfileDropdown = ({ user }: { user: User }) => {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut()}>
+        <DropdownMenuItem onClick={onSignOutClick}>
           {isPending ? (
             <Loader className="animate-spin" />
           ) : (

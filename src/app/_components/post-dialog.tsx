@@ -53,7 +53,7 @@ export const PostDialog = ({
   postInit: PostsWithActions["posts"][number];
   children: React.ReactNode;
 }) => {
-  const [_searchParams, setSearchParams] = useQueryStates(postSearchParams);
+  const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
   const initialData = createIntialPostData(postInit);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -72,9 +72,12 @@ export const PostDialog = ({
   const createAt = formatDistanceToNow(post.createdAt);
   return (
     <Dialog
+      open={isOpen || searchParams.post_id === post.id}
       onOpenChange={async (open) => {
         setIsOpen(open);
-        await setSearchParams({ comment: null });
+        if (!open) {
+          await setSearchParams({ comment: null, post_id: null });
+        }
       }}
     >
       <DialogTrigger>{children}</DialogTrigger>

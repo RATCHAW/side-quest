@@ -151,7 +151,7 @@ export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }
         </Button>
         <Button
           onClick={async () => {
-            await setSearchParams({ comment: true, q: searchParams.q });
+            await setSearchParams({ comment: true, post_id: post.id });
           }}
           variant="ghost"
           size="icon"

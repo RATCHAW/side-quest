@@ -9,7 +9,7 @@ interface PostCardProps {
   query?: string;
 }
 
-export function PostCard({ post, query }: PostCardProps) {
+export function PostCard({ post }: PostCardProps) {
   return (
     <div>
       <Card className="flex h-full flex-col gap-4 transition-shadow hover:shadow-md">

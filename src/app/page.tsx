@@ -2,12 +2,12 @@ import { loadSearchParams } from "./_components/search-params";
 import { Suspense } from "react";
 import { PostsSkeleton } from "./_components/skeletons/posts-skeleton";
 import { api, HydrateClient } from "@/trpc/server";
-import { PostsClient } from "./_components/posts";
+import { Posts } from "./_components/posts";
 import { LIMIT } from "@/hooks/use-infinite-posts";
 
-const IdeaPage = async ({ searchParams }: { searchParams: Promise<{ p: string; q: string }> }) => {
+const HomePage = async ({ searchParams }: { searchParams: Promise<{ p: string; q: string }> }) => {
   const { q } = await loadSearchParams(searchParams);
-  void api.post.all.prefetchInfinite({ q: q ?? undefined, limit: LIMIT });
+  void api.post.all.prefetchInfinite({ q: q ?? undefined, limit: LIMIT, bookmarks: false, myPosts: false });
   return (
     <div>
       <HydrateClient>
@@ -18,11 +18,11 @@ const IdeaPage = async ({ searchParams }: { searchParams: Promise<{ p: string; q
             </div>
           }
         >
-          <PostsClient />
+          <Posts />
         </Suspense>
       </HydrateClient>
     </div>
   );
 };
 
-export default IdeaPage;
+export default HomePage;

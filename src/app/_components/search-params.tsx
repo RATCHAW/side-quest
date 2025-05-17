@@ -2,6 +2,7 @@ import { parseAsString, createLoader, parseAsBoolean } from "nuqs/server";
 
 export const postSearchParams = {
   q: parseAsString,
+  signin: parseAsBoolean,
   post_id: parseAsString,
   comment: parseAsBoolean,
 };

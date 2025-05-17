@@ -7,6 +7,7 @@ import { useSession } from "@/lib/auth-client";
 import { NewPostDialog } from "./new-post";
 import { useQueryState } from "nuqs";
 import { SignInDialog } from "./signin-dialog";
+import Link from "next/link";
 export function Navbar() {
   const [q, setQ] = useQueryState("q", {
     defaultValue: "",
@@ -17,7 +18,9 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-10 border-b">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div className="text-xl font-bold">SideQuest</div>
+        <div className="text-xl font-bold">
+          <Link href="/">SideQuest</Link>
+        </div>
         <div className="relative mx-4 w-full max-w-md">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
           <Input

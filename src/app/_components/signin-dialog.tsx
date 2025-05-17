@@ -11,8 +11,12 @@ import {
 import { authClient } from "@/lib/auth-client";
 import { useMutation } from "@tanstack/react-query";
 import { Loader, LogIn } from "lucide-react";
+import { useQueryState, useQueryStates } from "nuqs";
+import { postSearchParams } from "./search-params";
 
 export const SignInDialog = () => {
+  const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
+
   const {
     mutate: signIn,
     isPending,
@@ -26,7 +30,12 @@ export const SignInDialog = () => {
   });
 
   return (
-    <Dialog>
+    <Dialog
+      open={searchParams.signin ?? false}
+      onOpenChange={(open) => {
+        void setSearchParams({ signin: open ? true : null });
+      }}
+    >
       <DialogTrigger asChild>
         <Button>
           <LogIn />

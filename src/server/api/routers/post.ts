@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc";
 import { newPostSchema } from "@/validation/post";
-import { TRPCError, type inferRouterOutputs } from "@trpc/server";
-import { Prisma, type PostVote } from "@prisma/client";
+import { TRPCError, type inferRouterInputs, type inferRouterOutputs } from "@trpc/server";
+import { type PostVote } from "@prisma/client";
+import type { AppRouter } from "../root";
 
 export const postRouter = createTRPCRouter({
   getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
@@ -100,12 +101,20 @@ export const postRouter = createTRPCRouter({
     .input(
       z.object({
         q: z.string().optional(),
+        bookmarks: z.boolean().default(false),
+        myPosts: z.boolean().default(false),
         limit: z.number().min(1).max(20).default(10),
         cursor: z.string().nullish(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const { limit, cursor, q } = input;
+      const { limit, cursor, q, bookmarks, myPosts } = input;
+
+      if ((bookmarks || myPosts) && !ctx.session?.user.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+        });
+      }
 
       const posts = await ctx.db.post.findMany({
         take: limit + 1,
@@ -125,6 +134,20 @@ export const postRouter = createTRPCRouter({
           },
         ],
         where: {
+          ...(bookmarks
+            ? {
+                bookmarks: {
+                  some: {
+                    userId: ctx.session?.user.id,
+                  },
+                },
+              }
+            : {}),
+          ...(myPosts
+            ? {
+                userId: ctx.session?.user.id,
+              }
+            : {}),
           title: {
             contains: q,
           },
@@ -311,3 +334,4 @@ type PostRouterOutput = inferRouterOutputs<typeof postRouter>;
 
 export type PostsWithActions = PostRouterOutput["all"];
 export type PostWithDetails = PostRouterOutput["getById"];
+export type PostAllInput = inferRouterInputs<AppRouter>["post"]["all"];

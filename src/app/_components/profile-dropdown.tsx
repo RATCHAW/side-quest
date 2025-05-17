@@ -16,6 +16,7 @@ import { type User } from "better-auth";
 import { authClient } from "@/lib/auth-client";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/trpc/react";
+import Link from "next/link";
 
 export const ProfileDropdown = ({ user }: { user: User }) => {
   const utils = api.useUtils();
@@ -47,11 +48,15 @@ export const ProfileDropdown = ({ user }: { user: User }) => {
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <BoltIcon size={16} className="opacity-60" aria-hidden="true" />
-            <span>My Posts</span>
+            <Link href="/myposts">
+              <span>My Posts</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
             <Layers2Icon size={16} className="opacity-60" aria-hidden="true" />
-            <span>Bookmarks</span>
+            <Link href="/bookmarks">
+              <span>Bookmarks</span>
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

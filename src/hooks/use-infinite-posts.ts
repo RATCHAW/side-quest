@@ -3,7 +3,7 @@ import { api } from "@/trpc/react";
 export const LIMIT = 9;
 
 export function useInfinitePosts({ query }: { query: string | null }) {
-  return api.post.all.useInfiniteQuery(
+  return api.post.all.useSuspenseInfiniteQuery(
     { limit: LIMIT, q: query ?? undefined },
 
     {

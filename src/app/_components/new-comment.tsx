@@ -63,8 +63,12 @@ export const NewComment = ({
   return (
     <div className="flex gap-4">
       <Avatar>
-        <AvatarImage src={userSession?.user.image || undefined} alt={userSession?.user.name} />
-        <AvatarFallback>{userSession?.user.name.charAt(0)}</AvatarFallback>
+        <AvatarImage src={userSession?.user.image || undefined} alt={userSession?.user.name || ""} />
+        <AvatarFallback>
+          <span suppressHydrationWarning>
+            {userSession?.user.name?.charAt(0) ? userSession.user.name.charAt(0) : "?"}
+          </span>
+        </AvatarFallback>
       </Avatar>
       <div className="flex-1 items-end space-y-2">
         <Form {...form}>

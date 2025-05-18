@@ -21,6 +21,7 @@ import { ResourcesSkeleton } from "./skeletons/resources-skeleton";
 import { postSearchParams } from "./search-params";
 import { useState } from "react";
 import { usePostMutations } from "./use-post-mutations";
+import { PostOptions } from "./post-options";
 
 const createIntialPostData = (post: PostsWithActions["posts"][number]): PostWithDetails => {
   return {
@@ -87,13 +88,16 @@ export const PostDialog = ({
       <DialogContent className="max-h-[90vh] !max-w-5xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">{post.title}</DialogTitle>
-          <DialogDescription className="flex items-center gap-2 text-sm">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={post.user.image || undefined} alt={post.user.name} />
-              <AvatarFallback>{post.user.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            Posted by {post.user.name} • {createAt}
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <DialogDescription className="flex items-center gap-2 text-sm">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={post.user.image || undefined} alt={post.user.name} />
+                <AvatarFallback>{post.user.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              Posted by {post.user.name} • {createAt}
+            </DialogDescription>
+            <PostOptions post={post} />
+          </div>
         </DialogHeader>
 
         <div className="relative my-4 h-64 w-full">

@@ -81,8 +81,28 @@ export const usePostMutations = (post: PostsWithActions["posts"][number]) => {
     },
   });
 
+  const deletePost = api.post.delete.useMutation({
+    onSuccess: async ({}, { id: postId }) => {
+      utils.post.all.setInfiniteData(
+        { q: searchParams.q ?? undefined, limit: LIMIT, bookmarks, myPosts },
+        (oldData) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              posts: page.posts.filter((item) => item.id !== postId),
+            })),
+          };
+        },
+      );
+    },
+  });
+
   return {
     vote,
     bookmark,
+    deletePost,
   };
 };

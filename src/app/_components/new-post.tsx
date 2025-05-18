@@ -19,22 +19,18 @@ import { useMutation } from "@tanstack/react-query";
 import { upload } from "@imagekit/next";
 import { Progress } from "@/components/ui/progress";
 import { env } from "@/env";
-import { useQueryStates } from "nuqs";
-import { postSearchParams } from "./search-params";
-import { LIMIT } from "@/hooks/use-infinite-posts";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
+import { usePostMutations } from "./use-post-mutations";
 
 type FormValues = z.infer<typeof newPostSchema>;
 
 export function NewPostDialog() {
   const [open, setOpen] = useState(false);
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
-  const [searchParams] = useQueryStates(postSearchParams);
   const router = useRouter();
   const { data: userSession } = useSession();
-
-  const utils = api.useUtils();
+  const { createPost } = usePostMutations();
 
   const uploadAuth = api.upload.getAuthCredentials.useQuery(undefined, {
     staleTime: 1000 * 60,
@@ -74,33 +70,6 @@ export function NewPostDialog() {
     name: "resources",
   });
 
-  const createPost = api.post.create.useMutation({
-    onSuccess: async (data) => {
-      utils.post.all.setInfiniteData({ q: searchParams.q ?? undefined, limit: LIMIT }, (oldData) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page) => ({
-            ...page,
-            posts: [data, ...page.posts],
-          })),
-        };
-      });
-      setOpen(false);
-      form.reset();
-      setImageUploadProgress(0);
-      uploadActions.clearFiles();
-      toast.success("Idea has been created", {
-        action: {
-          label: "View",
-          onClick: () => {
-            router.push(`/posts/${data.id}`);
-          },
-        },
-      });
-    },
-  });
-
   const maxSizeMB = 5;
   const maxSize = maxSizeMB * 1024 * 1024;
 
@@ -119,10 +88,28 @@ export function NewPostDialog() {
       const data = await uploadFileAsync(state.files[0]?.file as File);
       imageUrl = data?.url;
     }
-    createPost.mutate({
-      ...values,
-      imageUrl: imageUrl,
-    });
+    createPost.mutate(
+      {
+        ...values,
+        imageUrl: imageUrl,
+      },
+      {
+        onSuccess(data) {
+          setOpen(false);
+          form.reset();
+          setImageUploadProgress(0);
+          uploadActions.clearFiles();
+          toast.success("Idea has been created", {
+            action: {
+              label: "View",
+              onClick: () => {
+                router.push(`/post/${data.id}`);
+              },
+            },
+          });
+        },
+      },
+    );
   }
 
   return (

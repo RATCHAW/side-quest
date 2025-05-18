@@ -7,19 +7,21 @@ import { usePathname } from "next/navigation";
 import { useQueryStates } from "nuqs";
 import { postSearchParams } from "./search-params";
 import type { PostsWithActions } from "@/server/api/routers/post";
+import { toast } from "sonner";
 
-export const usePostMutations = (post: PostsWithActions["posts"][number]) => {
+export const usePostMutations = (post?: PostsWithActions["posts"][number]) => {
   const [searchParams] = useQueryStates(postSearchParams);
   const utils = api.useUtils();
 
   const pathname = usePathname();
 
   const bookmarks = !!pathname.startsWith("/bookmarks");
-  const myPosts = !!pathname.startsWith("/my-posts");
+  const myPosts = !!pathname.startsWith("/myposts");
 
-  const userCurrentVote = post.votes?.length > 0 && post.votes[0]?.voteType;
   const vote = api.post.vote.useMutation({
     onMutate: async ({ postId, voteType }) => {
+      if (!post) return;
+      const userCurrentVote = post.votes?.length > 0 && post.votes[0]?.voteType;
       const shouldRemoveVote = userCurrentVote === voteType;
 
       utils.post.all.setInfiniteData(
@@ -83,6 +85,7 @@ export const usePostMutations = (post: PostsWithActions["posts"][number]) => {
 
   const deletePost = api.post.delete.useMutation({
     onSuccess: async ({}, { id: postId }) => {
+      toast.success("Post deleted successfully");
       utils.post.all.setInfiniteData(
         { q: searchParams.q ?? undefined, limit: LIMIT, bookmarks, myPosts },
         (oldData) => {
@@ -100,7 +103,27 @@ export const usePostMutations = (post: PostsWithActions["posts"][number]) => {
     },
   });
 
+  const createPost = api.post.create.useMutation({
+    onSuccess: async (data) => {
+      utils.post.all.setInfiniteData(
+        { q: searchParams.q ?? undefined, limit: LIMIT, bookmarks, myPosts },
+        (oldData) => {
+          console.log("oldData", oldData, bookmarks, myPosts);
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              posts: [data, ...page.posts],
+            })),
+          };
+        },
+      );
+    },
+  });
+
   return {
+    createPost,
     vote,
     bookmark,
     deletePost,

@@ -20,6 +20,7 @@ import { useQueryStates } from "nuqs";
 import { ResourcesSkeleton } from "./skeletons/resources-skeleton";
 import { postSearchParams } from "./search-params";
 import { useState } from "react";
+import { usePostMutations } from "./use-post-mutations";
 
 const createIntialPostData = (post: PostsWithActions["posts"][number]): PostWithDetails => {
   return {
@@ -56,6 +57,8 @@ export const PostDialog = ({
   const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
   const initialData = createIntialPostData(postInit);
   const [isOpen, setIsOpen] = useState(false);
+
+  const { vote, bookmark } = usePostMutations(postInit);
 
   const { data: post, isFetching } = api.post.getById.useQuery(
     {
@@ -130,7 +133,7 @@ export const PostDialog = ({
             </div>
           )}
 
-          <PostAction post={postInit} />
+          <PostAction bookmark={bookmark} vote={vote} post={postInit} />
         </div>
 
         <CommentSection

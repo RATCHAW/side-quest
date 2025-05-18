@@ -1,3 +1,5 @@
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewComment } from "./new-comment";
 import type { Post } from "@prisma/client";
@@ -10,14 +12,14 @@ import { CommentsSectionSkeleton } from "./skeletons/comment-section-skeleton";
 interface CommentSectionProps {
   comments: PostWithDetails["comments"];
   postId: Post["id"];
-  commentsCount: number;
-  isLoading: boolean;
+  commentsCount?: number;
+  isLoading?: boolean;
 }
 
-export function CommentSection({ comments, postId, commentsCount, isLoading }: CommentSectionProps) {
+export function CommentSection({ comments, postId, commentsCount = 0, isLoading = false }: CommentSectionProps) {
   const [showReply, setShowReply] = useState("");
   return (
-    <div className="mt-6 space-y-6">
+    <div className="mt-6 w-full space-y-6">
       <h3 className="text-xl font-semibold">Discussion ({commentsCount})</h3>
 
       <NewComment postId={postId} parentId={null} />

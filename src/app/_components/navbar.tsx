@@ -16,7 +16,7 @@ export function Navbar() {
 
   const { data } = useSession();
   return (
-    <header className="sticky top-0 z-10 border-b">
+    <header className="bg-background sticky top-0 z-10 border-b">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="text-xl font-bold">
           <Link href="/">SideQuest</Link>

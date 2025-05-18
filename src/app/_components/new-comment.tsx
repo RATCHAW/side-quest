@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { newPostCommentSchema, type NewPostComment } from "@/validation/post";
 import { api } from "@/trpc/react";
 import type { Post, PostComment } from "@prisma/client";
@@ -13,7 +13,7 @@ import { useSession } from "@/lib/auth-client";
 import { parseAsBoolean, useQueryState } from "nuqs";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { Loader } from "lucide-react";
+import { Loader, MessageSquare } from "lucide-react";
 
 export const NewComment = ({
   postId,
@@ -68,29 +68,29 @@ export const NewComment = ({
       </Avatar>
       <div className="flex-1 items-end space-y-2">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Comment</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Share your thoughts or ask questions..."
-                      className="resize-none"
-                      {...field}
-                    />
+                    <Textarea placeholder="Share your thoughts or ask questions..." {...field} />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button disabled={createComment.isPending}>
-              {createComment.isPending && <Loader className="animate-spin" />}
-              Post Comment
-            </Button>
+            <div className="mt-2 flex justify-end">
+              <Button disabled={createComment.isPending}>
+                {createComment.isPending ? (
+                  <Loader className="animate-spin" />
+                ) : (
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                )}
+                Comment
+              </Button>
+            </div>
           </form>
         </Form>
       </div>

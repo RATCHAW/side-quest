@@ -1,8 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
 import type { PostsWithActions } from "@/server/api/routers/post";
 import { PostAction } from "./post-actions";
 import { PostDialog } from "./post-dialog";
+import { usePostMutations } from "./use-post-mutations";
 
 interface PostCardProps {
   post: PostsWithActions["posts"][number];
@@ -10,6 +13,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post }: PostCardProps) {
+  const { bookmark, vote } = usePostMutations(post);
   return (
     <div>
       <Card className="flex h-full flex-col gap-4 transition-shadow hover:shadow-md">
@@ -30,7 +34,7 @@ export function PostCard({ post }: PostCardProps) {
           </div>
         </PostDialog>
         <CardFooter className="w-full">
-          <PostAction post={post} />
+          <PostAction vote={vote} bookmark={bookmark} post={post} />
         </CardFooter>
       </Card>
     </div>

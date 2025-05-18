@@ -3,92 +3,41 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PostsWithActions } from "@/server/api/routers/post";
-import { api } from "@/trpc/react";
-import type { PostBookmark, PostVote, Vote } from "@prisma/client";
 import { Bookmark, MessageSquare, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useQueryStates } from "nuqs";
 import { toast } from "sonner";
 import { postSearchParams } from "./search-params";
 import { useSession } from "@/lib/auth-client";
-import { LIMIT } from "@/hooks/use-infinite-posts";
-import { calculateVotesCount } from "./votes-count";
-import { usePathname } from "next/navigation";
+import type { UseTRPCMutationResult } from "@trpc/react-query/shared";
+import type { AppRouter } from "@/server/api/root";
+import type { inferRouterInputs } from "@trpc/server";
 
-export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }) => {
-  const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
+type PostVoteMutation = UseTRPCMutationResult<
+  Awaited<ReturnType<AppRouter["post"]["vote"]>>,
+  unknown,
+  inferRouterInputs<AppRouter>["post"]["vote"],
+  unknown
+>;
+
+type PostBookmarkMutation = UseTRPCMutationResult<
+  Awaited<ReturnType<AppRouter["post"]["bookmark"]>>,
+  unknown,
+  inferRouterInputs<AppRouter>["post"]["bookmark"],
+  unknown
+>;
+
+interface PostActionProps {
+  post: PostsWithActions["posts"][number];
+  vote: PostVoteMutation;
+  bookmark: PostBookmarkMutation;
+}
+
+export const PostAction = ({ post, vote, bookmark }: PostActionProps) => {
+  const [_searchParams, setSearchParams] = useQueryStates(postSearchParams);
   const session = useSession();
   const isSignedIn = !!session.data?.user;
-  const utils = api.useUtils();
-
-  const pathname = usePathname();
-
-  const bookmarks = !!pathname.startsWith("/bookmarks");
-  const myPosts = !!pathname.startsWith("/my-posts");
 
   const userCurrentVote = post.votes?.length > 0 && post.votes[0]?.voteType;
-
-  const vote = api.post.vote.useMutation({
-    onMutate: async ({ postId, voteType }) => {
-      const shouldRemoveVote = userCurrentVote === voteType;
-
-      utils.post.all.setInfiniteData(
-        { q: searchParams.q ?? undefined, limit: LIMIT, bookmarks, myPosts },
-        (oldData) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              posts: page.posts.map((post) => {
-                if (post.id === postId) {
-                  return {
-                    ...post,
-                    _count: {
-                      ...post._count,
-                      votes: calculateVotesCount({
-                        currentVoteCount: post._count.votes,
-                        userCurrentVote: post.votes?.[0]?.voteType,
-                        voteType,
-                      }),
-                    },
-                    votes: shouldRemoveVote ? [] : ([{ voteType: voteType as Vote }] as PostVote[]),
-                  };
-                }
-                return post;
-              }),
-            })),
-          };
-        },
-      );
-    },
-  });
-
-  const bookmark = api.post.bookmark.useMutation({
-    onMutate: async ({ postId, actionType }) => {
-      utils.post.all.setInfiniteData(
-        { q: searchParams.q ?? undefined, limit: LIMIT, bookmarks, myPosts },
-        (oldData) => {
-          if (!oldData) return oldData;
-
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              posts: page.posts.map((item) => {
-                if (item.id === postId) {
-                  return {
-                    ...item,
-                    bookmarks: actionType === "ADD" ? ([{ createdAt: new Date() }] as PostBookmark[]) : [],
-                  };
-                }
-                return item;
-              }),
-            })),
-          };
-        },
-      );
-    },
-  });
 
   const handleBookmark = () => {
     if (!isSignedIn) {
@@ -115,7 +64,7 @@ export const PostAction = ({ post }: { post: PostsWithActions["posts"][number] }
   };
 
   const handleShare = async () => {
-    await navigator.clipboard.writeText(window.location.href + `/posts/${post.id}`);
+    await navigator.clipboard.writeText(window.location.href + `/post/${post.id}`);
     toast.success("Link copied to clipboard", {
       position: "bottom-center",
     });

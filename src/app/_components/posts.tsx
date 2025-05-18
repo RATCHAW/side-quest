@@ -11,7 +11,7 @@ import { PostsSkeleton } from "./skeletons/posts-skeleton";
 export const Posts = ({ bookmarks, myPosts }: { bookmarks?: boolean; myPosts?: boolean }) => {
   const [q] = useQueryState("q");
 
-  const [data, { fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, isLoading }] = useInfinitePosts({
+  const [data, { fetchNextPage, hasNextPage, isFetching, isFetchingNextPage }] = useInfinitePosts({
     q: q ?? undefined,
     bookmarks: bookmarks ?? false,
     myPosts: myPosts ?? false,

@@ -275,6 +275,56 @@ export const postRouter = createTRPCRouter({
     });
   }),
 
+  edit: protectedProcedure
+    .input(
+      newPostSchema.extend({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const post = await ctx.db.post.findUnique({
+        where: {
+          id: input.id,
+        },
+        include: {
+          resources: true,
+        },
+      });
+      if (!post) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          cause: "POST_NOT_FOUND",
+          message: `Post with id '${input.id}' not found`,
+        });
+      }
+      if (post.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          cause: "UNAUTHORIZED",
+          message: `You are not authorized to edit this post`,
+        });
+      }
+      return await ctx.db.post.update({
+        where: {
+          id: input.id,
+        },
+        include: {
+          resources: true,
+        },
+        data: {
+          title: input.title,
+          description: input.description,
+          imageUrl: input.imageUrl,
+          resources: {
+            deleteMany: post.resources,
+            createMany: {
+              data: input.resources,
+            },
+          },
+        },
+      });
+    }),
+
   vote: protectedProcedure
     .input(
       z.object({

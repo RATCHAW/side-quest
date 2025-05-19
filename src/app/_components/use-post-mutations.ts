@@ -3,16 +3,16 @@ import type { PostBookmark, PostVote, Vote } from "@prisma/client";
 
 import { LIMIT } from "@/hooks/use-infinite-posts";
 import { calculateVotesCount } from "./votes-count";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useQueryStates } from "nuqs";
 import { postSearchParams } from "./search-params";
 import type { PostsWithActions } from "@/server/api/routers/post";
 import { toast } from "sonner";
 
 export const usePostMutations = (post?: PostsWithActions["posts"][number]) => {
-  const [searchParams] = useQueryStates(postSearchParams);
+  const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
   const utils = api.useUtils();
-
+  const router = useRouter();
   const pathname = usePathname();
 
   const bookmarks = !!pathname.startsWith("/bookmarks");
@@ -122,7 +122,49 @@ export const usePostMutations = (post?: PostsWithActions["posts"][number]) => {
     },
   });
 
+  const editPost = api.post.edit.useMutation({
+    onSuccess: async (updatedPost, input) => {
+      toast.success("Idea has been updated", {
+        action: {
+          label: "View",
+          onClick: () => {
+            router.push(`/post/${updatedPost.id}`);
+          },
+        },
+      });
+      void setSearchParams({ post_edit_id: null });
+      utils.post.all.setInfiniteData(
+        { q: searchParams.q ?? undefined, limit: LIMIT, bookmarks, myPosts },
+        (oldData) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              posts: page.posts.map((post) => {
+                if (post.id === input.id) {
+                  return {
+                    ...post,
+                    title: updatedPost.title,
+                    description: updatedPost.description,
+                    resources: updatedPost.resources,
+                  };
+                }
+                return post;
+              }),
+            })),
+          };
+        },
+      );
+
+      // Invalidate the getById query to refresh the detailed view if needed
+      await utils.post.getById.invalidate({ id: input.id });
+    },
+  });
+
   return {
+    editPost,
     createPost,
     vote,
     bookmark,

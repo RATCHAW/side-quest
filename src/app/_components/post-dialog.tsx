@@ -22,6 +22,7 @@ import { postSearchParams } from "./search-params";
 import { useState } from "react";
 import { usePostMutations } from "./use-post-mutations";
 import { PostOptions } from "./post-options";
+import { useSession } from "@/lib/auth-client";
 
 const createIntialPostData = (post: PostsWithActions["posts"][number]): PostWithDetails => {
   return {
@@ -59,6 +60,8 @@ export const PostDialog = ({
   const initialData = createIntialPostData(postInit);
   const [isOpen, setIsOpen] = useState(false);
 
+  const { data: userSession } = useSession();
+
   const { vote, bookmark } = usePostMutations(postInit);
 
   const { data: post, isFetching } = api.post.getById.useQuery(
@@ -73,6 +76,15 @@ export const PostDialog = ({
       refetchOnWindowFocus: false,
     },
   );
+
+  const onEditPostClick = () => {
+    void setSearchParams({ post_edit_id: post.id });
+    setIsOpen(false);
+  };
+
+  if (!post) {
+    return null;
+  }
   const createAt = formatDistanceToNow(post.createdAt);
   return (
     <Dialog
@@ -96,7 +108,7 @@ export const PostDialog = ({
               </Avatar>
               Posted by {post.user.name} • {createAt}
             </DialogDescription>
-            <PostOptions post={post} />
+            {post.userId === userSession?.user.id && <PostOptions onEditClick={onEditPostClick} post={post} />}
           </div>
         </DialogHeader>
 

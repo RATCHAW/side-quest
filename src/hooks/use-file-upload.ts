@@ -50,6 +50,7 @@ export type FileUploadActions = {
   getInputProps: (props?: InputHTMLAttributes<HTMLInputElement>) => InputHTMLAttributes<HTMLInputElement> & {
     ref: React.Ref<HTMLInputElement>;
   };
+  addImageByUrl: (url?: string, name?: string) => void;
 };
 
 export const useFileUpload = (options: FileUploadOptions = {}): [FileUploadState, FileUploadActions] => {
@@ -131,7 +132,7 @@ export const useFileUpload = (options: FileUploadOptions = {}): [FileUploadState
     setState((prev) => {
       // Clean up object URLs
       prev.files.forEach((file) => {
-        if (file.preview && file.file instanceof File && file.file.type.startsWith("image/")) {
+        if (file.preview && file.file instanceof File) {
           URL.revokeObjectURL(file.preview);
         }
       });
@@ -360,6 +361,36 @@ export const useFileUpload = (options: FileUploadOptions = {}): [FileUploadState
     [accept, multiple, handleFileChange],
   );
 
+  const addImageByUrl = useCallback(
+    (url?: string, name = "image-from-url.jpg") => {
+      if (!url) return;
+      const id = `url-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      const fileMeta: FileMetadata = {
+        name,
+        size: 0,
+        type: "image/jpeg",
+        url,
+        id,
+      };
+      const fileWithPreview: FileWithPreview = {
+        file: fileMeta,
+        id,
+        preview: url,
+      };
+      setState((prev) => {
+        const newFiles = multiple ? [...prev.files, fileWithPreview] : [fileWithPreview];
+        onFilesChange?.(newFiles);
+        return {
+          ...prev,
+          files: newFiles,
+          errors: [],
+        };
+      });
+      onFilesAdded?.([fileWithPreview]);
+    },
+    [multiple, onFilesChange, onFilesAdded],
+  );
+
   return [
     state,
     {
@@ -374,6 +405,7 @@ export const useFileUpload = (options: FileUploadOptions = {}): [FileUploadState
       handleFileChange,
       openFileDialog,
       getInputProps,
+      addImageByUrl,
     },
   ];
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { type z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,31 +19,56 @@ import { useMutation } from "@tanstack/react-query";
 import { upload } from "@imagekit/next";
 import { Progress } from "@/components/ui/progress";
 import { env } from "@/env";
-import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { usePostMutations } from "./use-post-mutations";
+import { postSearchParams } from "./search-params";
+import { useQueryStates } from "nuqs";
 
 type FormValues = z.infer<typeof newPostSchema>;
 
 export function NewPostDialog() {
   const [open, setOpen] = useState(false);
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
-  const router = useRouter();
   const { data: userSession } = useSession();
-  const { createPost } = usePostMutations();
+  const { createPost, editPost } = usePostMutations();
+  const [searchParams, setSearchParams] = useQueryStates(postSearchParams);
+
+  const isEditing = !!searchParams.post_edit_id;
 
   const uploadAuth = api.upload.getAuthCredentials.useQuery(undefined, {
     staleTime: 1000 * 60,
     enabled: false,
   });
+
+  const maxSizeMB = 5;
+  const maxSize = maxSizeMB * 1024 * 1024;
+
+  const { data } = api.post.getById.useQuery(
+    { id: searchParams.post_edit_id! },
+    { enabled: !!searchParams.post_edit_id },
+  );
+  const [state, uploadActions] = useFileUpload({
+    accept: "image/*",
+    maxSize,
+  });
+
+  useEffect(() => {
+    if (data) {
+      uploadActions.addImageByUrl(data.imageUrl || undefined, "unedited_image_hodler");
+      form.setValue("title", data.title);
+      form.setValue("description", data.description);
+      form.setValue("resources", data.resources);
+    }
+  }, [searchParams.post_edit_id, data]);
+
   const { mutateAsync: uploadFileAsync } = useMutation({
     mutationFn: async (file: File) => {
-      const { data } = await uploadAuth.refetch();
-      if (!data) return;
+      const { data: uploadAuthData } = await uploadAuth.refetch();
+      if (!uploadAuthData) return;
       const response = await upload({
-        expire: data.expire,
-        token: data.token,
-        signature: data.signature,
+        expire: uploadAuthData.expire,
+        token: uploadAuthData.token,
+        signature: uploadAuthData.signature,
         publicKey: env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY,
         file,
         fileName: file.name,
@@ -70,52 +95,67 @@ export function NewPostDialog() {
     name: "resources",
   });
 
-  const maxSizeMB = 5;
-  const maxSize = maxSizeMB * 1024 * 1024;
-
-  const [state, uploadActions] = useFileUpload({
-    accept: "image/*",
-    maxSize,
-  });
-
   async function onSubmit(values: FormValues) {
     if (!userSession?.user) {
       toast.error("You must be logged in to create a post");
       return;
     }
+
     let imageUrl: string | undefined = undefined;
-    if (state.files[0]?.file) {
+    if (state.files[0]?.file && state.files[0].file.name !== "unedited_image_hodler") {
       const data = await uploadFileAsync(state.files[0]?.file as File);
-      imageUrl = data?.url;
+      if (data) {
+        imageUrl = data.url;
+      }
     }
-    createPost.mutate(
-      {
-        ...values,
-        imageUrl: imageUrl,
-      },
-      {
-        onSuccess(data) {
-          setOpen(false);
-          form.reset();
-          setImageUploadProgress(0);
-          uploadActions.clearFiles();
-          toast.success("Idea has been created", {
-            action: {
-              label: "View",
-              onClick: () => {
-                router.push(`/post/${data.id}`);
-              },
-            },
-          });
+
+    if (searchParams.post_edit_id) {
+      editPost.mutate(
+        {
+          id: searchParams.post_edit_id,
+          ...values,
+          imageUrl,
         },
-      },
-    );
+        {
+          onSuccess() {
+            setOpen(false);
+            form.reset();
+
+            setImageUploadProgress(0);
+            uploadActions.clearFiles();
+          },
+        },
+      );
+    } else {
+      createPost.mutate(
+        {
+          ...values,
+          imageUrl: imageUrl,
+        },
+        {
+          onSuccess() {
+            setOpen(false);
+            form.reset();
+            setImageUploadProgress(0);
+            uploadActions.clearFiles();
+          },
+        },
+      );
+    }
   }
 
   return (
     <Dialog
-      open={open}
+      open={open || !!data?.id}
       onOpenChange={(open) => {
+        if (!open) {
+          if (isEditing) {
+            form.reset();
+            uploadActions.clearFiles();
+            setImageUploadProgress(0);
+          }
+          void setSearchParams({ post_edit_id: null });
+        }
         setOpen(open);
       }}
     >
@@ -126,7 +166,7 @@ export function NewPostDialog() {
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-auto sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>Share Your Project Idea</DialogTitle>
+          <DialogTitle>{isEditing ? "Edit Your Project Idea" : "Share Your Project Idea"}</DialogTitle>
         </DialogHeader>
         <FileUpload fileUpload={[state, uploadActions]} maxSizeMB={maxSizeMB} />
         {state.files[0]?.file && imageUploadProgress > 0 && <Progress value={imageUploadProgress} />}
@@ -215,8 +255,9 @@ export function NewPostDialog() {
               ))}
             </div>
 
-            <Button disabled={createPost.isPending} type="submit">
-              {createPost.isPending && <Loader className="animate-spin" />} Post
+            <Button disabled={createPost.isPending || editPost.isPending} type="submit">
+              {(createPost.isPending || editPost.isPending) && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+              {isEditing ? "Update" : "Post"}
             </Button>
           </form>
         </Form>

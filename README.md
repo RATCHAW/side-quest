@@ -1,29 +1,25 @@
-# Create T3 App
+# SideQuest - Project Ideas Sharing Platform
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+A modern social platform for sharing and discovering project ideas, built with Next.js 15, tRPC, and React Query. Users can browse, vote on, bookmark, and discuss various project concepts in a Reddit-like community environment.
 
-## What's next? How do I make an app with this?
+## 🚀 Features
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+- **Project Sharing**: Create and share project ideas with descriptions and resources
+- **Voting System**: Upvote/downvote projects to surface the best ideas
+- **Threaded Comments**: Engage in discussions with nested comment replies
+- **Bookmarks**: Save favorite projects for later reference
+- **Search & Filtering**: Find projects by keywords and categories
+- **User Authentication**: Secure login with Better Auth
+- **Responsive Design**: Optimized for desktop and mobile devices
+- **SEO Optimized**: Server-side rendering with React Server Components
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## 🛠️ Tech Stack
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
-
-## Learn More
-
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
-
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
-
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
-
-## How do I deploy this?
-
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+- **Next.js 15** - React framework with App Router and Server Components
+- **TypeScript** - Type-safe development
+- **tRPC** - End-to-end typesafe APIs
+- **TanStack React Query** - Server state management with hydration
+- **Better Auth** - Authentication solution
+- **Shadcn UI** - Accessible component primitives
+- **Prisma** - Type-safe database ORM
+- **PostgreSQL** - Relational database
